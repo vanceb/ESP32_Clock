@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.env.osx": {
+        "PATH": "/Users/vance/.platformio/penv/bin:/Users/vance/.platformio/penv:/Users/vance/Downloads/google-cloud-sdk/bin:/Users/vance/bin:/usr/local/sbin:/usr/local/bin:/Users/vance/mbed-toolchain/gcc-arm/bin:/Users/vance/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/VMware Fusion.app/Contents/Public:/opt/X11/bin",
+        "PLATFORMIO_CALLER": "vscode"
+    }
+}
