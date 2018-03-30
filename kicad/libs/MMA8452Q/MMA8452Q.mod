@@ -1,0 +1,489 @@
+PCBNEW-LibModule-V1  
+# encoding utf-8
+Units mm
+$INDEX
+QFN-16_0.5MM
+QFN-16_0.5MM-EXTRA
+$EndINDEX
+$MODULE QFN-16_0.5MM
+Po 0 0 0 15 00000000 00000000 ~~
+Li QFN-16_0.5MM
+Cd <h3>QFN-16 0.5mm Pitch</h3>3 x 3mm Outline<br>16-pin<br>Used on the MMA8452Q accelerometer<br><br><b>Unproven</b><br><br>Layout in accordance with App note AN4077<br>http://cache.freescale.com/files/sensors/doc/app_note/AN4077.pdf
+Sc 00000000
+At SMD
+Op 0 0 0
+.SolderMask 0
+.SolderPaste 0
+T0 -0.638886 -2.10875 0.320844 0.320844 0 0.05 N V 21 "QFN-16_0.5MM"
+T1 -0.436808 2.16618 0.320885 0.320885 0 0.05 N V 21 "VAL**"
+DS -1.5 1.5 -1.5 -1.5 0.127 24
+DS -1.5 -1.5 1.5 -1.5 0.127 24
+DS 1.5 -1.5 1.5 1.5 0.127 24
+DS 1.5 1.5 -1.5 1.5 0.127 24
+DS -1.5 -1.3432 -1.5 -1.5 0.1778 21
+DS -1.5 -1.5 -0.8432 -1.5 0.1778 21
+DS 1.5 1.3432 1.5 1.5 0.1778 21
+DS -1.5 1.3432 -1.5 1.5 0.1778 21
+DS 1.5 -1.3432 1.5 -1.5 0.1778 21
+DS 1.5 -1.5 0.8432 -1.5 0.1778 21
+DS -1.5 1.5 -0.8432 1.5 0.1778 21
+DS 1.5 1.5 0.8432 1.5 0.1778 21
+DS 0.346 0.473 0.092 0.473 0.0508 24
+DS 0.092 0.473 0.219 0.6 0.0508 24
+DS 0.092 0.473 0.219 0.346 0.0508 24
+DS 0.181 -0.173 0.181 0.081 0.0508 24
+DS 0.181 0.081 0.308 -0.046 0.0508 24
+DS 0.181 0.081 0.054 -0.046 0.0508 24
+DC -0.6 -0.6 -0.5 -0.6 0.127 21
+DC 0.154 -0.554 0.281 -0.554 0.0508 24
+DC 0.154 -0.554 0.1794 -0.554 0.0508 24
+DP 0 0 0 0 4 0.381 24
+Dl -0.125461 0.933
+Dl 0.125 0.933
+Dl 0.125 1.40516
+Dl -0.125461 1.40516
+DP 0 0 0 0 4 0.381 24
+Dl 0.375687 0.933
+Dl 0.625 0.933
+Dl 0.625 1.40257
+Dl 0.375687 1.40257
+DP 0 0 0 0 4 0.381 24
+Dl -0.62539 0.933
+Dl -0.375 0.933
+Dl -0.375 1.40087
+Dl -0.62539 1.40087
+DP 0 0 0 0 4 0.381 24
+Dl 0.125 -0.935044
+Dl -0.125273 -0.935044
+Dl -0.125273 -1.4
+Dl 0.125 -1.4
+DP 0 0 0 0 4 0.381 24
+Dl 0.625 -0.933523
+Dl 0.37521 -0.933523
+Dl 0.37521 -1.4
+Dl 0.625 -1.4
+DP 0 0 0 0 4 0.381 24
+Dl -0.375 -0.93559
+Dl -0.626735 -0.93559
+Dl -0.626735 -1.4
+Dl -0.375 -1.4
+DP 0 0 0 0 4 0.381 24
+Dl -1.40273 -0.125
+Dl -0.933 -0.125
+Dl -0.933 0.125244
+Dl -1.40273 0.125244
+DP 0 0 0 0 4 0.381 24
+Dl -1.40375 -0.625
+Dl -0.933 -0.625
+Dl -0.933 -0.376003
+Dl -1.40375 -0.376003
+DP 0 0 0 0 4 0.381 24
+Dl -1.4014 -1.125
+Dl -0.933 -1.125
+Dl -0.933 -0.875872
+Dl -1.4014 -0.875872
+DP 0 0 0 0 4 0.381 24
+Dl -1.40148 0.375
+Dl -0.933 0.375
+Dl -0.933 0.625662
+Dl -1.40148 0.625662
+DP 0 0 0 0 4 0.381 24
+Dl -1.40339 0.875
+Dl -0.933 0.875
+Dl -0.933 1.12772
+Dl -1.40339 1.12772
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 0.125198
+Dl 0.934474 0.125198
+Dl 0.934474 -0.125
+Dl 1.4 -0.125
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 -0.375923
+Dl 0.935297 -0.375923
+Dl 0.935297 -0.625
+Dl 1.4 -0.625
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 -0.87559
+Dl 0.933629 -0.87559
+Dl 0.933629 -1.125
+Dl 1.4 -1.125
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 0.626518
+Dl 0.935266 0.626518
+Dl 0.935266 0.375
+Dl 1.4 0.375
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 1.12684
+Dl 0.934531 1.12684
+Dl 0.934531 0.875
+Dl 1.4 0.875
+$PAD
+Sh "15" R 0.3 0.8 0 0 1800
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 0 -1.275
+$EndPAD
+$PAD
+Sh "14" R 0.3 0.8 0 0 1800
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 0.5 -1.275
+$EndPAD
+$PAD
+Sh "13" R 0.3 0.8 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.275 -1
+$EndPAD
+$PAD
+Sh "12" R 0.3 0.8 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.275 -0.5
+$EndPAD
+$PAD
+Sh "11" R 0.3 0.8 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.275 0
+$EndPAD
+$PAD
+Sh "10" R 0.3 0.8 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.275 0.5
+$EndPAD
+$PAD
+Sh "9" R 0.3 0.8 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.275 1
+$EndPAD
+$PAD
+Sh "16" R 0.3 0.8 0 0 1800
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -0.5 -1.275
+$EndPAD
+$PAD
+Sh "7" R 0.3 0.8 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 0 1.275
+$EndPAD
+$PAD
+Sh "6" R 0.3 0.8 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -0.5 1.275
+$EndPAD
+$PAD
+Sh "8" R 0.3 0.8 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 0.5 1.275
+$EndPAD
+$PAD
+Sh "3" R 0.3 0.8 0 0 2700
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.275 0
+$EndPAD
+$PAD
+Sh "2" R 0.3 0.8 0 0 2700
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.275 -0.5
+$EndPAD
+$PAD
+Sh "1" R 0.3 0.8 0 0 2700
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.275 -1
+$EndPAD
+$PAD
+Sh "4" R 0.3 0.8 0 0 2700
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.275 0.5
+$EndPAD
+$PAD
+Sh "5" R 0.3 0.8 0 0 2700
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.275 1
+$EndPAD
+$EndMODULE QFN-16_0.5MM
+$MODULE QFN-16_0.5MM-EXTRA
+Po 0 0 0 15 00000000 00000000 ~~
+Li QFN-16_0.5MM-EXTRA
+Cd <h3>QFN-16 0.5mm Pitch</h3>3 x 3mm Outline<br>16-pin<br>Used on the MMA8452Q accelerometer<br><br><b>Unproven</b><br><br>Layout in accordance with App note AN4077<br>http://cache.freescale.com/files/sensors/doc/app_note/AN4077.pdf
+Sc 00000000
+At SMD
+Op 0 0 0
+.SolderMask 0
+.SolderPaste 0
+T0 -0.458397 -2.75037 0.320836 0.320836 0 0.05 N V 21 "QFN-16_0.5MM-EXTRA"
+T1 0.254524 3.1052 0.320661 0.320661 0 0.05 N V 21 "VAL**"
+DS -1.5 1.5 -1.5 -1.5 0.127 24
+DS -1.5 -1.5 1.5 -1.5 0.127 24
+DS 1.5 -1.5 1.5 1.5 0.127 24
+DS 1.5 1.5 -1.5 1.5 0.127 24
+DS -1.5 -1.3432 -1.5 -1.5 0.1778 21
+DS -1.5 -1.5 -0.8432 -1.5 0.1778 21
+DS 1.5 1.3432 1.5 1.5 0.1778 21
+DS -1.5 1.3432 -1.5 1.5 0.1778 21
+DS 1.5 -1.3432 1.5 -1.5 0.1778 21
+DS 1.5 -1.5 0.8432 -1.5 0.1778 21
+DS -1.5 1.5 -0.8432 1.5 0.1778 21
+DS 1.5 1.5 0.8432 1.5 0.1778 21
+DS 0.346 0.473 0.092 0.473 0.0508 24
+DS 0.092 0.473 0.219 0.6 0.0508 24
+DS 0.092 0.473 0.219 0.346 0.0508 24
+DS 0.181 -0.173 0.181 0.081 0.0508 24
+DS 0.181 0.081 0.308 -0.046 0.0508 24
+DS 0.181 0.081 0.054 -0.046 0.0508 24
+DC -1.9254 -1.5254 -1.8254 -1.5254 0.127 21
+DC 0.154 -0.554 0.281 -0.554 0.0508 24
+DC 0.154 -0.554 0.1794 -0.554 0.0508 24
+DP 0 0 0 0 4 0.381 24
+Dl -0.125073 0.933
+Dl 0.125 0.933
+Dl 0.125 1.40082
+Dl -0.125073 1.40082
+DP 0 0 0 0 4 0.381 24
+Dl 0.375943 0.933
+Dl 0.625 0.933
+Dl 0.625 1.40352
+Dl 0.375943 1.40352
+DP 0 0 0 0 4 0.381 24
+Dl -0.626257 0.933
+Dl -0.375 0.933
+Dl -0.375 1.40282
+Dl -0.626257 1.40282
+DP 0 0 0 0 4 0.381 24
+Dl 0.125 -0.935366
+Dl -0.125317 -0.935366
+Dl -0.125317 -1.4
+Dl 0.125 -1.4
+DP 0 0 0 0 4 0.381 24
+Dl 0.625 -0.934291
+Dl 0.375518 -0.934291
+Dl 0.375518 -1.4
+Dl 0.625 -1.4
+DP 0 0 0 0 4 0.381 24
+Dl -0.375 -0.934902
+Dl -0.626274 -0.934902
+Dl -0.626274 -1.4
+Dl -0.375 -1.4
+DP 0 0 0 0 4 0.381 24
+Dl -1.40188 -0.125
+Dl -0.933 -0.125
+Dl -0.933 0.125168
+Dl -1.40188 0.125168
+DP 0 0 0 0 4 0.381 24
+Dl -1.40339 -0.625
+Dl -0.933 -0.625
+Dl -0.933 -0.375909
+Dl -1.40339 -0.375909
+DP 0 0 0 0 4 0.381 24
+Dl -1.40243 -1.125
+Dl -0.933 -1.125
+Dl -0.933 -0.876514
+Dl -1.40243 -0.876514
+DP 0 0 0 0 4 0.381 24
+Dl -1.40218 0.375
+Dl -0.933 0.375
+Dl -0.933 0.625971
+Dl -1.40218 0.625971
+DP 0 0 0 0 4 0.381 24
+Dl -1.40486 0.875
+Dl -0.933 0.875
+Dl -0.933 1.12891
+Dl -1.40486 1.12891
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 0.12544
+Dl 0.936278 0.12544
+Dl 0.936278 -0.125
+Dl 1.4 -0.125
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 -0.376362
+Dl 0.93639 -0.376362
+Dl 0.93639 -0.625
+Dl 1.4 -0.625
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 -0.875429
+Dl 0.933458 -0.875429
+Dl 0.933458 -1.125
+Dl 1.4 -1.125
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 0.626531
+Dl 0.935285 0.626531
+Dl 0.935285 0.375
+Dl 1.4 0.375
+DP 0 0 0 0 4 0.381 24
+Dl 1.4 1.12791
+Dl 0.93542 1.12791
+Dl 0.93542 0.875
+Dl 1.4 0.875
+$PAD
+Sh "1" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.59 -1
+$EndPAD
+$PAD
+Sh "2" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.59 -0.5
+$EndPAD
+$PAD
+Sh "3" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.59 0
+$EndPAD
+$PAD
+Sh "4" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.59 0.5
+$EndPAD
+$PAD
+Sh "5" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -1.59 1
+$EndPAD
+$PAD
+Sh "6" R 0.25 1.5 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -0.5 1.59
+$EndPAD
+$PAD
+Sh "7" R 0.25 1.5 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 0 1.59
+$EndPAD
+$PAD
+Sh "8" R 0.25 1.5 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 0.5 1.59
+$EndPAD
+$PAD
+Sh "9" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.59 1
+$EndPAD
+$PAD
+Sh "10" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.59 0.5
+$EndPAD
+$PAD
+Sh "11" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.59 0
+$EndPAD
+$PAD
+Sh "12" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.59 -0.5
+$EndPAD
+$PAD
+Sh "13" R 0.25 1.5 0 0 900
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 1.59 -1
+$EndPAD
+$PAD
+Sh "14" R 0.25 1.5 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 0.5 -1.59
+$EndPAD
+$PAD
+Sh "15" R 0.25 1.5 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po 0 -1.59
+$EndPAD
+$PAD
+Sh "16" R 0.25 1.5 0 0 0
+At SMD N 00888000
+.SolderMask 0
+.SolderPaste 0
+Ne 0 ""
+Po -0.5 -1.59
+$EndPAD
+$EndMODULE QFN-16_0.5MM-EXTRA

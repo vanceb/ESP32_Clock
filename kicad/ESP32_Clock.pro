@@ -1,4 +1,4 @@
-update=Tuesday, 06 February 2018 'pmt' 14:29:55
+update=Thursday, 29 March 2018 'pmt' 14:20:10
 version=1
 last_client=kicad
 [pcbnew]
@@ -25,6 +25,16 @@ version=1
 NetIExt=net
 [general]
 version=1
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=
+SpiceForceRefPrefix=0
+SpiceUseNetNumbers=0
+LabSize=60
 [eeschema]
 version=1
 LibDir=
@@ -59,3 +69,12 @@ LibName27=atmel
 LibName28=contrib
 LibName29=valves
 LibName30=libs/ESP32-footprints-Shem-Lib
+LibName31=switches
+LibName32=silabs
+LibName33=libs/custom/mcp73831
+LibName34=leds
+LibName35=libs/custom/ws2812b
+LibName36=libs/custom/usb_otg
+LibName37=libs/custom/mma8452q
+LibName38=libs/custom/apds-9960
+LibName39=libs/custom/BA33DD0WHFP

@@ -1,0 +1,10 @@
+(fp_lib_table
+  (lib (name ESP32-footprints-Lib)(type KiCad)(uri "$(KIPRJMOD)/libs/ESP32-footprints-Lib.pretty")(options "")(descr ""))
+  (lib (name 128x32_OLED)(type KiCad)(uri "$(KIPRJMOD)/libs/custom/128x32_OLED.pretty")(options "")(descr ""))
+  (lib (name MMA8452Q)(type Legacy)(uri "$(KIPRJMOD)/libs/MMA8452Q/MMA8452Q.mod")(options "")(descr ""))
+  (lib (name QFN16)(type KiCad)(uri "$(KIPRJMOD)/libs/custom/QFN16.pretty")(options "")(descr ""))
+  (lib (name ADPS-9960)(type KiCad)(uri "$(KIPRJMOD)/libs/custom/ADPS-9960.pretty")(options "")(descr ""))
+  (lib (name QFN-24)(type KiCad)(uri "$(KIPRJMOD)/libs/custom/QFN-24.pretty")(options "")(descr ""))
+  (lib (name LDO)(type KiCad)(uri "$(KIPRJMOD)/libs/custom/LDO.pretty")(options "")(descr ""))
+  (lib (name MicroUSB_Custom)(type KiCad)(uri "$(KIPRJMOD)/libs/custom/MicroUSB.pretty")(options "")(descr ""))
+)
