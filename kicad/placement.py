@@ -46,22 +46,23 @@ def place_circle(refdes, cdes, start_angle, center, radius, component_offset=0, 
 
 def clock(start_angle=270, center=(4000, 3000)):
 
-    middle_LED = "U33"
-    middle_C = "C38"
+    middle_LED = "U32"
+    middle_C = "C37"
     pcb = GetBoard()
     part = pcb.FindModuleByReference(middle_LED)
     part.SetPosition(wxPoint(FromMils(center[0]), FromMils(center[1])))
+    part.SetOrientation(-1800)
     part = pcb.FindModuleByReference(middle_C)
     part.SetPosition(wxPoint(FromMils(center[0] + 200), FromMils(center[1])))
     part.SetOrientation(-900)
 
-    hours_LED = ["U" + str(c) for c in range(32,20,-1)]
-    mins_LED = ["U" + str(c) for c in range(20, 8, -1)]
-    mkrs_LED = ["U" + str(c) for c in range(8,4,-1)]
+    hours_LED = ["U" + str(c) for c in range(31,19,-1)]
+    mins_LED = ["U" + str(c) for c in range(19, 7, -1)]
+    mkrs_LED = ["U" + str(c) for c in range(7,3,-1)]
 
-    hours_C = ["C" + str(c) for c in range(37,25,-1)]
-    mins_C = ["C" + str(c) for c in range(25, 13, -1)]
-    mkrs_C = ["C" + str(c) for c in range(13,9,-1)]
+    hours_C = ["C" + str(c) for c in range(36,24,-1)]
+    mins_C = ["C" + str(c) for c in range(24, 12, -1)]
+    mkrs_C = ["C" + str(c) for c in range(12,8,-1)]
 
     place_circle(hours_LED, hours_C, start_angle, center, 800)
     place_circle(mins_LED, mins_C, start_angle, center, 1150)
