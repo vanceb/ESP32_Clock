@@ -52,6 +52,7 @@ void blink_task(void *pvParameter)
     gpio_set_direction(BLINK_GPIO_1, GPIO_MODE_OUTPUT);
     gpio_set_direction(BLINK_GPIO_2, GPIO_MODE_OUTPUT);
     while(1) {
+        ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
         /* Blink off (output low) */
         gpio_set_level(BLINK_GPIO_1, 0);
         gpio_set_level(BLINK_GPIO_2, 1);
@@ -110,7 +111,7 @@ void walk_task(void *pvParameter)
     smiley(pStrand);
     delay(2000);
     while(true) { 
-        ESP_LOGD(TAG, "loop..");
+        ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
         r = (uint8_t)esp_random() & 0x20;
         g = (uint8_t)esp_random() & 0x20;
         b = (uint8_t)esp_random() & 0x20;

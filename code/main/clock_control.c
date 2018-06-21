@@ -99,6 +99,15 @@ void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
 void aws_iot_task(void *param) {
     char cPayload[100];
 
+    /* Factory coded MAC used as ID */
+    char ESP_ID[18];
+    uint8_t mac[6]; 
+    esp_efuse_mac_get_default(mac);
+    sprintf(ESP_ID, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    ESP_LOGD(TAG, "ESP ID: %s", ESP_ID);
+    char MQTT_BASE[24];
+    sprintf(MQTT_BASE, "%s/%s", PROJECT, (char *)ESP_ID);
+
     int32_t i = 0;
 
     IoT_Error_t rc = FAILURE;
@@ -108,7 +117,7 @@ void aws_iot_task(void *param) {
     IoT_Client_Connect_Params connectParams = iotClientConnectParamsDefault;
 
     IoT_Publish_Message_Params paramsQOS0;
-    IoT_Publish_Message_Params paramsQOS1;
+    //IoT_Publish_Message_Params paramsQOS1;
 
     ESP_LOGI(TAG, "AWS IoT SDK Version %d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 
@@ -187,29 +196,43 @@ void aws_iot_task(void *param) {
         abort();
     }
 
-    const char *TOPIC = "test_topic/esp32";
-    const int TOPIC_LEN = strlen(TOPIC);
+    /*
+     * Subscribe to the command topic
+     */
+    char CMD_TOPIC[strlen(MQTT_BASE) + strlen("/cmd") + 1];
+    sprintf(CMD_TOPIC, "%s%s", MQTT_BASE, "/cmd");
+    const int CMD_TOPIC_LEN = strlen(CMD_TOPIC);
 
-    ESP_LOGI(TAG, "Subscribing...");
-    rc = aws_iot_mqtt_subscribe(&client, TOPIC, TOPIC_LEN, QOS0, iot_subscribe_callback_handler, NULL);
+    ESP_LOGI(TAG, "Subscribing to: %s", CMD_TOPIC);
+    rc = aws_iot_mqtt_subscribe(&client, CMD_TOPIC, CMD_TOPIC_LEN, QOS0, iot_subscribe_callback_handler, NULL);
     if(SUCCESS != rc) {
         ESP_LOGE(TAG, "Error subscribing : %d ", rc);
         abort();
     }
 
-    sprintf(cPayload, "%s : %d ", "hello from SDK", i);
+    /*
+     * Prepare to send on the heartbeat topic
+     */
+    sprintf(cPayload, "%s : %d ", "Heartbeat: ", i);
 
     paramsQOS0.qos = QOS0;
     paramsQOS0.payload = (void *) cPayload;
     paramsQOS0.isRetained = 0;
 
+    /*
     paramsQOS1.qos = QOS1;
     paramsQOS1.payload = (void *) cPayload;
     paramsQOS1.isRetained = 0;
+    */
+
+    char HEARTBEAT_TOPIC[64];
+    sprintf(HEARTBEAT_TOPIC, "%s%s", MQTT_BASE, "/heartbeat");
+    int HEARTBEAT_TOPIC_LEN = strlen(HEARTBEAT_TOPIC);
 
     // The main loop
 
     while((NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc)) {
+        ESP_LOGD(TAG, "Heartbeat topic: %s", HEARTBEAT_TOPIC);
 
         //Max time the yield function will wait for read messages
         rc = aws_iot_mqtt_yield(&client, 100);
@@ -218,12 +241,13 @@ void aws_iot_task(void *param) {
             continue;
         }
 
-        ESP_LOGI(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
-        vTaskDelay(1000 / portTICK_RATE_MS);
-        sprintf(cPayload, "%s : %d ", "hello from ESP32 (QOS0)", i++);
+        ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+        vTaskDelay(5000 / portTICK_RATE_MS);
+        sprintf(cPayload, "%s : %d ", "Heartbeat", i++);
         paramsQOS0.payloadLen = strlen(cPayload);
-        rc = aws_iot_mqtt_publish(&client, TOPIC, TOPIC_LEN, &paramsQOS0);
+        rc = aws_iot_mqtt_publish(&client, HEARTBEAT_TOPIC, HEARTBEAT_TOPIC_LEN, &paramsQOS0);
 
+        /*
         sprintf(cPayload, "%s : %d ", "hello from ESP32 (QOS1)", i++);
         paramsQOS1.payloadLen = strlen(cPayload);
         rc = aws_iot_mqtt_publish(&client, TOPIC, TOPIC_LEN, &paramsQOS1);
@@ -231,6 +255,7 @@ void aws_iot_task(void *param) {
             ESP_LOGW(TAG, "QOS1 publish ack not received.");
             rc = SUCCESS;
         }
+        */
     }
 
     ESP_LOGE(TAG, "An error occurred in the main loop.");

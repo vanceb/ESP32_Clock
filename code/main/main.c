@@ -130,6 +130,6 @@ void app_main()
 
     // Create long-running tasks
     xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
-    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    xTaskCreate(&blink_task, "blink_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
     xTaskCreate(&walk_task, "walk_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }

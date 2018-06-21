@@ -5,6 +5,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 
+/* Some basic data */
+#define PROJECT "esp32clock"
+#define VERSION 1
+
 /* The examples use simple WiFi configuration that you can set via
    'make menuconfig'.
 
