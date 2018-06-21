@@ -1,0 +1,98 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}",
+                "/Library/Developer/CommandLineTools/usr/include/c++/v1",
+                "/usr/local/include",
+                "/Library/Developer/CommandLineTools/usr/lib/clang/9.1.0/include",
+                "/Library/Developer/CommandLineTools/usr/include",
+                "/usr/include",
+                "/Users/vance/esp/esp-idf/components/freertos/include",
+                "/Users/vance/esp/esp-idf/components/log/include",
+                "/Users/vance/esp/esp-idf/components/newlib/include",
+                "/Users/vance/esp/esp-idf/components/fatfs/src",
+                "/Users/vance/esp/esp-idf/components/aws_iot/include",
+                "/Users/vance/esp/esp-idf/components/aws_iot/aws-iot-device-sdk-embedded-C/include",
+                "/Users/vance/esp/esp-idf/components/nvs_flash/include",
+                "/Users/vance/esp/esp-idf/components/driver/include",
+                "/Users/vance/esp/esp-idf/components/soc/esp32/include",
+                "/Users/vance/esp/esp-idf/components/soc/include",
+                "/Users/vance/esp/esp-idf/components/heap/include",
+                "/Users/vance/esp/esp-idf/components/lwip/include/lwip",
+                "/Users/vance/esp/esp-idf/components/lwip/include/lwip/port",
+                "/Users/vance/esp/esp-idf/components/mbedtls/include",
+                "/Users/vance/esp/esp-idf/components/tcpip_adapter/include",
+                "/Users/vance/esp/esp-idf/components/wear_levelling/include",
+                "/Users/vance/esp/esp-idf/components/spi_flash/include",
+                "/Users/vance/esp/esp-idf/components/esp32/include",
+                "${workspaceFolder}/components/esp32_digital_led_lib/include",
+                "${workspaceFolder}/build/include"
+            ],
+            "defines": [],
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "/Library/Developer/CommandLineTools/usr/include/c++/v1",
+                    "/usr/local/include",
+                    "/Library/Developer/CommandLineTools/usr/lib/clang/9.1.0/include",
+                    "/Library/Developer/CommandLineTools/usr/include",
+                    "/usr/include",
+                    "/Users/vance/esp/esp-idf/components"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        },
+        {
+            "name": "Linux",
+            "includePath": [
+                "/usr/include",
+                "/usr/local/include",
+                "${workspaceFolder}"
+            ],
+            "defines": [],
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "/usr/include",
+                    "/usr/local/include",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "${workspaceFolder}"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "intelliSenseMode": "msvc-x64",
+            "browse": {
+                "path": [
+                    "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        }
+    ],
+    "version": 4
+}
