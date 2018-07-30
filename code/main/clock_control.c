@@ -1,6 +1,8 @@
 // Local code
 #include "main.h"
 #include "clock_control.h"
+#include "keyvalue.h"
+
 
 // c libraries
 #include <string.h>
@@ -67,6 +69,19 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
                                     IoT_Publish_Message_Params *params, void *pData) {
     ESP_LOGI(TAG, "Subscribe callback");
     ESP_LOGI(TAG, "%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, (char *)params->payload);
+    /* Create a null terminated string from the payload */
+    int i;
+    char str_payload[params->payloadLen +1];
+    for (i=0;  i<params->payloadLen; i++)
+        str_payload[i] = ((char *) params->payload)[i];
+    str_payload[i] = '\0';
+    /* Parse the payload for key value pairs */
+    key_value_pair *kv = parse_kv(str_payload);
+    /* Just print them out for the moment... */
+    while (kv->next) {
+        kv = kv->next;
+        ESP_LOGI(TAG, "%s: %s", kv->key, kv->value);
+    }
 }
 
 void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
@@ -97,7 +112,12 @@ void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
 
 */
 void aws_iot_task(void *param) {
-    char cPayload[100];
+    /* Declare external variables used for communication */
+    int request_display_mode = RANDOM;
+    rgb request_color = {0,0,0};
+
+    /* Create a payload buffer */
+    char cPayload[1000];
 
     /* Factory coded MAC used as ID */
     char ESP_ID[18];

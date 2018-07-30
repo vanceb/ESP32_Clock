@@ -31,6 +31,10 @@
 #include <string.h>
 #include <math.h>
 
+#include <time.h>
+#include <sys/time.h>
+#include "apps/sntp/sntp.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -41,6 +45,7 @@
 #include "esp_vfs_fat.h"
 #include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -100,18 +105,85 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     wifi_config_t wifi_config = {
         .sta = {
-            /*
+            
             .ssid = EXAMPLE_WIFI_SSID,
             .password = EXAMPLE_WIFI_PASS,
-            */
+           /* 
             .ssid = "rlab",
             .password = "hackmenow",
+            */
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_start() );
+}
+
+void i2cscanner(int sda_pin, int scl_pin) {
+    static char tag[] = "i2cscanner";
+	ESP_LOGD(tag, ">> i2cScanner");
+	i2c_config_t conf;
+	conf.mode = I2C_MODE_MASTER;
+	conf.sda_io_num = sda_pin;
+	conf.scl_io_num = scl_pin;
+	conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
+	conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
+	conf.master.clk_speed = 100000;
+	i2c_param_config(I2C_NUM_0, &conf);
+
+	i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0);
+
+	int i;
+	esp_err_t espRc;
+	printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
+	printf("00:         ");
+	for (i=3; i< 0x78; i++) {
+		i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+		i2c_master_start(cmd);
+		i2c_master_write_byte(cmd, (i << 1) | I2C_MASTER_WRITE, 1 /* expect ack */);
+		i2c_master_stop(cmd);
+
+		espRc = i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
+		if (i%16 == 0) {
+			printf("\n%.2x:", i);
+		}
+		if (espRc == 0) {
+			printf(" %.2x", i);
+		} else {
+			printf(" --");
+		}
+		ESP_LOGD(tag, "i=%d, rc=%d (0x%x)", i, espRc, espRc);
+		i2c_cmd_link_delete(cmd);
+	}
+	printf("\n");
+}
+
+static void initialize_sntp(void)
+{
+    ESP_LOGI(TAG, "Initializing SNTP");
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_init();
+}
+
+static void obtain_time(void)
+{
+    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
+                        false, true, portMAX_DELAY);
+    initialize_sntp();
+
+    // wait for time to be set
+    time_t now = 0;
+    struct tm timeinfo = { 0 };
+    int retry = 0;
+    const int retry_count = 10;
+    while(timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) {
+        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        time(&now);
+        localtime_r(&now, &timeinfo);
+    }
 }
 
 // Initialise and run the tasks
@@ -125,11 +197,43 @@ void app_main()
     }
     ESP_ERROR_CHECK( err );
 
+    /* Declare external variables used for communication */
+    int request_display_mode = RANDOM;
+    rgb request_color = {0,0,0};
+
+    /* Scan I2C */
+    //i2cscanner(22, 23);
+
     // Setup wifi
     initialise_wifi();
+
+    /* Deal with the time */
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    // Is time set? If not, tm_year will be (1970 - 1900).
+    if (timeinfo.tm_year < (2016 - 1900)) {
+        ESP_LOGI(TAG, "Time is not set yet. Connecting to WiFi and getting time over NTP.");
+        obtain_time();
+        // update 'now' variable with current time
+        time(&now);
+    }
+    char strftime_buf[64];
+
+    // Set timezone to UK Time and print local time
+    setenv("TZ", "GMT0BST,M3.5.0/1,M10.5.0", 1);
+    //setenv("TZ", "EST5EDT,M3.2.0/2,M11.1.0", 1);
+    tzset();
+    localtime_r(&now, &timeinfo);
+    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    ESP_LOGI(TAG, "The current date/time in UK is: %s", strftime_buf);
+
+    // Initialise the LED Strands
+    ledStrandSetup();
 
     // Create long-running tasks
     xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
     xTaskCreate(&blink_task, "blink_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-    xTaskCreate(&walk_task, "walk_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    xTaskCreate(&clock_display_task, "walk_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }

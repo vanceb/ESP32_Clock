@@ -85,18 +85,18 @@ int parse_one_kv(char *buffer, key_value_pair *kv)
 
 /* Look for the key */
     /* Eat whitespace */
-    for (; isspace(*buffer); ++buffer)
+    for (; isspace((int) *buffer); ++buffer)
         ;
     /* Check for end of the input */
-    if (*buffer == EOF || *buffer == '\0')
+    if (*buffer == '\0')
         return -1;
     /* Note start of the key */    
     start_k = buffer;
     /* Move forward to the first non-alphanumeric character */
-    for (; isalnum(*buffer); ++buffer)
+    for (; isalnum((int) *buffer); ++buffer)
         ;
     /* Check for end of the input */
-    if (*buffer == EOF || *buffer == '\0' || *buffer == '\n') {
+    if (*buffer == '\0' || *buffer == '\n') {
         /* This should not happen in a well formatted buffer */
         return -2;
     }
@@ -104,21 +104,18 @@ int parse_one_kv(char *buffer, key_value_pair *kv)
 
 /* Look for value */
     /* Eat whitespace */
-    for (; isspace(*buffer); ++buffer)
+    for (; isspace((int) *buffer); ++buffer)
         ;
     /* Check for end of the input */
-    if (*buffer == EOF || *buffer == '\0' || *buffer == '\n') {
+    if (*buffer == '\0' || *buffer == '\n') {
         /* This should not happen in a well formatted buffer */
         return -2;
     }
     /* Note start of the value */    
     start_v = buffer;
     /* Should be terminated with a newline */
-    for (; *buffer != '\n' && *buffer != EOF; ++buffer)
+    for (; *buffer != '\n'; ++buffer)
         ;
-    /* Check for EOF */
-    if (*buffer == EOF)
-        return -1;
     *buffer++ = '\0'; /* Allow key string to be read directly from the buffer */
 
     /* Work to the end of the list of KV */
@@ -174,10 +171,11 @@ char *get_value(key_value_pair *kv, char* key)
 /*
  * A main function to allow interactive testing of functionality
  */
+/*
 int main()
 {
     int i;
-    char inbuff[256];
+    int inbuff[256];
     key_value_pair *kv, *root;
 
     printf("Please input key value to be parsed: \n");
@@ -198,3 +196,4 @@ int main()
     printf("Value of SVB: %s\n", get_value(root, "SVB"));
     
 }
+*/

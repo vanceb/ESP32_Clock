@@ -21,6 +21,34 @@
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 extern EventGroupHandle_t wifi_event_group;
 
+/* Display modes */
+extern int displayMode;
+enum DISPLAY_MODE {
+    CLOCK,
+    SMILEY,
+    WALK,
+    HYPNO,
+    TWINKLE,
+    ALL,
+    RANDOM, /* Should stay the last entry */
+};
+
+/* Color */
+typedef struct color_rgb {
+    int r;
+    int g;
+    int b;
+} rgb;
+
+typedef struct color_hsv {
+    int h;
+    int s;
+    int v;
+} hsv;
+
+extern rgb request_color;
+extern int request_display_mode;
+
 /* The event group allows multiple bits for each event,
    but we only care about one event - are we connected
    to the AP with an IP? */
@@ -40,5 +68,6 @@ extern const int CONNECTED_BIT;
 // Arduino-like functions to ease readability
 extern uint32_t IRAM_ATTR millis();
 extern void delay(uint32_t ms);
+
 
 #endif

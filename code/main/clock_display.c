@@ -1,3 +1,6 @@
+#include <time.h>
+#include <sys/time.h>
+
 #include "main.h"
 #include "clock_display.h"
 
@@ -14,28 +17,41 @@ static const char *TAG = "clock_display";
 strand_t STRANDS[] = {
     {
         .rmtChannel = 1,
-        .gpioNum = 21,
+        .gpioNum = 16,
         .ledType = LED_WS2812B_V3,
         .brightLimit = 32,
         .numPixels = 29,
-        .pixels = nullptr,
-        ._stateVars = nullptr
+        .pixels = NULL,
+        ._stateVars = NULL
     },
 };
+
 int STRANDCNT = sizeof(STRANDS)/sizeof(STRANDS[0]);
 
-/* Convenience function to set up the pin for LED string
+/* Convenience function to set up the LED strands
 */
-void ledGpioSetup(int gpioNum) {
-    // Convert ints into correct types
-    gpio_num_t gpioNumNative = (gpio_num_t)(gpioNum);
-    // Enable GPIO for the pins from IOMUX
-    gpio_pad_select_gpio(gpioNumNative);
-    // Set direction and initial value
-    gpio_set_direction(gpioNumNative, GPIO_MODE_OUTPUT);
-    gpio_set_level(gpioNumNative, HIGH);
-    // No need to set pullup as this is an output!!
+void ledStrandSetup(void) {
+    int i;
+    // GPIO setup for each strand defined above 
+    for(i=0; i<STRANDCNT; i++) {
+        // Convert ints into correct types
+        gpio_num_t gpioNumNative = (gpio_num_t)(STRANDS[i].gpioNum);
+        // Enable GPIO for the pins from IOMUX
+        gpio_pad_select_gpio(gpioNumNative);
+        // Set direction and initial value
+        gpio_set_direction(gpioNumNative, GPIO_MODE_OUTPUT);
+        gpio_set_level(gpioNumNative, HIGH);
+        // No need to set pullup as this is an output!!
+    }
+
+    // Library-specific setup
+    if(digitalLeds_initStrands(STRANDS, STRANDCNT)) {
+        ESP_LOGE(TAG, "LED Strand Init Failure:  Halting...");
+        while(true) {};
+    }
+    ESP_LOGD(TAG, "Initialised strands");
 }
+
 
 void blink_task(void *pvParameter)
 {
@@ -64,70 +80,182 @@ void blink_task(void *pvParameter)
     }
 }
 
-void smiley(strand_t* pStrand) {
-    digitalLeds_resetPixels(pStrand);
+rgb mix(rgb a, rgb b){
+    rgb c;
+    c.r = a.r + b.r;
+    c.g = a.g + b.g;
+    c.b = a.b + b.b;
+    return c;
+}
+
+void all(rgb *leds, rgb color)
+{
+    int i;
+    for (i=0; i<NUM_PIXELS; i++){
+        leds[i] = color;
+    }
+}
+
+void reset_leds(rgb *leds) {
+    rgb off = {0,0,0};
+    all(leds, off);
+}
+
+void smiley(rgb *leds, rgb color) {
+    reset_leds(leds);
+    int i;
     uint8_t smile[] = {1,
                        0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
                        0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0,
                        0, 0, 0, 0
                        }; 
-    for (int i = 0; i < pStrand->numPixels; i++) {
+    for (i=0; i<NUM_PIXELS; i++) {
         if (smile[i]) {
-            pStrand->pixels[i] = pixelFromRGB(32, 32, 0);
+            leds[i] = color;
         }
     }
-    digitalLeds_updatePixels(pStrand);
 }
 
 
-void walk_task(void *pvParameter)
+void walk(rgb *leds, rgb next)
 {
-    ESP_LOGD(TAG, "Starting walk-led task");
-    gpio_pad_select_gpio(LEDS_GPIO);
-    gpio_set_direction(LEDS_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(LEDS_GPIO, 0);
-
-    strand_t STRANDS[] = {
-                            {.rmtChannel = 1,
-                             .gpioNum = LEDS_GPIO,
-                             .ledType = LED_WS2812B_V1,
-                             .brightLimit = 32,
-                             .numPixels = 29,
-                             .pixels = NULL,
-                             ._stateVars = NULL
-                            },
-    };
-    int STRANDCNT = 1;
-    if(digitalLeds_initStrands(STRANDS, STRANDCNT)) {
-        ESP_LOGD(TAG, "Init Failure:  Halting...");
-        while(true) {};
+    int i;
+    for (i=1; i<NUM_PIXELS; i++) {
+        leds[i] = leds[i-1];
     }
-    ESP_LOGD(TAG, "Initialised strands");
+    leds[0] = next;
+}
 
-    pixelColor_t dark = pixelFromRGB(0,0,0);
-    uint16_t prev = 0;
-    strand_t* pStrand = &STRANDS[0];
-    uint8_t r, g, b;
-    smiley(pStrand);
-    delay(2000);
-    while(true) { 
+void hypno(rgb *leds, rgb color, long hold)
+{
+    ESP_LOGD(TAG, "Displaying hypno");
+}
+
+void twinkle(rgb *leds, uint32_t create, uint8_t fade)
+{
+    int i;
+    for(i=0; i<NUM_PIXELS; i++) {
+        /* Create a new twinkle */
+        if(esp_random() < create)
+        {
+            /* Generate a random colour */
+            leds[i].r = (uint8_t)esp_random();
+            leds[i].g = (uint8_t)esp_random();
+            leds[i].b = (uint8_t)esp_random();
+        }
+        /* Fade towards unlit */
+        leds[i].r = (leds[i].r > fade) ? leds[i].r - fade : 0;
+        leds[i].g = (leds[i].g > fade) ? leds[i].g - fade : 0;
+        leds[i].b = (leds[i].b > fade) ? leds[i].b - fade : 0;
+    }
+}
+
+void display_clock(rgb *leds) 
+{
+    int i;
+    /* Get the local time */
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    // Is time set? If not, tm_year will be (1970 - 1900).
+    if (timeinfo.tm_year < (2016 - 1900)) {
+        ESP_LOGE(TAG, "Time is not set, not displaying clock");
+        return;
+    }
+    int hour = timeinfo.tm_hour;
+    int minute = timeinfo.tm_min;
+    int second = timeinfo.tm_sec;
+
+    /* Display the clock (Simple) */
+    rgb Marker_Color = {2,2,2};
+    rgb Hour_Color = {32,0,0};
+    rgb Minute_Color = {0,0,32};
+    rgb Second_Color = {0,32,0};
+
+    /* Clear frame buffer */
+    for(i=0; i<NUM_PIXELS; i++)
+        leds[i].r = leds[i].g = leds[i].b = 0;
+
+    /* Markers */
+    leds[0] = Marker_Color;
+    for (i=0; i<4; i++) {
+        leds[25+i] = Marker_Color;
+    }
+    /* Hour */
+    leds[((hour)%12)+1] = Hour_Color;
+    /* Minute */
+    leds[((minute/5)%12)+1] = mix(Minute_Color, leds[((minute/5)%12)+1]);
+    leds[((minute/5)%12)+13] = Minute_Color;
+    /* Seconds */
+    leds[((second/5)%12)+13] = mix(Second_Color, leds[((second/5)%12)+13]);
+}
+
+rgb color_random()
+{
+    rgb c = {0,0,0};
+    while ((c.r | c.g | c.b) == 0) 
+    {
+        /* Generate a random colour */
+        c.r = (uint8_t)esp_random() & 0x2F;
+        c.g = (uint8_t)esp_random() & 0x2F;
+        c.b = (uint8_t)esp_random() & 0x2F;
+    }
+    return c;
+}
+
+
+void clock_display_task(void *pvParameter) 
+{
+    int i;
+    strand_t *strand = &STRANDS[0];
+    rgb leds[strand->numPixels];
+
+    rgb color;
+    //int displayMode = request_display_mode;
+    int displayMode = CLOCK;
+    rgb request_color = {0,0,0};
+    int display;
+
+    for(;;) {
         ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
-        r = (uint8_t)esp_random() & 0x20;
-        g = (uint8_t)esp_random() & 0x20;
-        b = (uint8_t)esp_random() & 0x20;
-        if ((r | g | b) == 0) {
-            smiley(pStrand);
-            delay(2000);
-            continue;
+        if ((request_color.r | request_color.g | request_color.b) == 0) 
+            color = color_random();
+        if (displayMode == RANDOM && (uint8_t)esp_random() < 16)
+            display = (uint8_t)esp_random() % 6;
+        else
+            display = displayMode;
+
+        switch (display) {
+            case CLOCK:
+                display_clock(leds);
+                delay(500);
+                break;
+            case SMILEY:
+                smiley(leds, color);
+                delay(2000);
+                break;
+            case WALK:
+                walk(leds, color);
+                delay(100);
+                break;
+            case HYPNO:
+                hypno(leds, color, 20);
+                break;
+            case TWINKLE:
+                twinkle(leds, 0x00800000, 2);
+                break;
+            case ALL:
+                all(leds, color);
+                delay(2000);
+            default:
+                ESP_LOGE(TAG, "Hit Default Display Mode - Should not happen");
+                break;
         }
-        digitalLeds_resetPixels(pStrand);
-        pixelColor_t red = pixelFromRGB(r, g, b);
-        for(uint16_t i = 0; i < pStrand->numPixels; i++) {
-            pStrand->pixels[i] = red;
-            pStrand->pixels[prev] = dark;
-            prev = i;
-            digitalLeds_updatePixels(pStrand);
-            delay(200);
+        /* Update the display */
+        for (i=0; i<strand->numPixels; i++) {
+            strand->pixels[i] = pixelFromRGB(leds[i].r, leds[i].g, leds[i].b);
         }
+        digitalLeds_updatePixels(strand);
     }
 }

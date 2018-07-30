@@ -10,12 +10,13 @@ This contains the following functionality:
 
 */
 
+extern void ledStrandSetup(void);
 extern void blink_task(void *pvParameter);
-extern void walk_task(void *pvParameter);
+extern void clock_display_task(void *pvParameter);
 
 #define LEDS_GPIO 21
 #define BLINK_GPIO_1 15
 #define BLINK_GPIO_2 13
-
+#define NUM_PIXELS 29
 
 #endif
