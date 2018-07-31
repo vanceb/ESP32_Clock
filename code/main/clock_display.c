@@ -88,6 +88,14 @@ rgb mix(rgb a, rgb b){
     return c;
 }
 
+rgb fade(rgb color, int quotient, int divisor)
+{
+    color.r = (int)((long)(color.r * quotient) / divisor);
+    color.g = (int)((long)(color.g * quotient) / divisor);
+    color.b = (int)((long)(color.b * quotient) / divisor);
+    return color;
+}
+
 void all(rgb *leds, rgb color)
 {
     int i;
@@ -150,7 +158,49 @@ void twinkle(rgb *leds, uint32_t create, uint8_t fade)
     }
 }
 
-void display_clock(rgb *leds) 
+void display_clock_simple(rgb *leds) 
+{
+    int i;
+    /* Get the local time */
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    // Is time set? If not, tm_year will be (1970 - 1900).
+    if (timeinfo.tm_year < (2016 - 1900)) {
+        ESP_LOGE(TAG, "Time is not set, not displaying clock");
+        return;
+    }
+    int hour = timeinfo.tm_hour;
+    int minute = timeinfo.tm_min;
+    int second = timeinfo.tm_sec;
+
+    /* Display the clock (Simple) */
+    rgb Marker_Color = {2,2,2};
+    rgb Hour_Color = {16,0,16};
+    rgb Minute_Color = {16,16,0};
+    rgb Second_Color = {0,16,16};
+
+    /* Clear frame buffer */
+    for(i=0; i<NUM_PIXELS; i++)
+        leds[i].r = leds[i].g = leds[i].b = 0;
+
+    /* Markers */
+    leds[0] = Marker_Color;
+    for (i=0; i<4; i++) {
+        leds[25+i] = Marker_Color;
+    }
+    /* Hour */
+    leds[((hour)%12)+1] = Hour_Color;
+    /* Minute */
+    leds[((minute/5)%12)+1] = mix(Minute_Color, leds[((minute/5)%12)+1]);
+    leds[((minute/5)%12)+13] = Minute_Color;
+    /* Seconds */
+    leds[((second/5)%12)+13] = mix(Second_Color, leds[((second/5)%12)+13]);
+}
+
+
+void display_clock_fade(rgb *leds)
 {
     int i;
     /* Get the local time */
@@ -183,13 +233,21 @@ void display_clock(rgb *leds)
         leds[25+i] = Marker_Color;
     }
     /* Hour */
-    leds[((hour)%12)+1] = Hour_Color;
+    leds[((hour)%12)+1] = fade(Hour_Color, 60 - minute, 60);
+    leds[((hour)%12)+2] = fade(Hour_Color, minute, 60);
     /* Minute */
-    leds[((minute/5)%12)+1] = mix(Minute_Color, leds[((minute/5)%12)+1]);
-    leds[((minute/5)%12)+13] = Minute_Color;
+    /* Inner ring */
+    leds[((minute/5)%12)+1] = mix(fade(Minute_Color, 5 - (minute % 5), 5), leds[((minute/5)%12)+1]);
+    leds[(((minute/5)+1) %12)+1] = mix(fade(Minute_Color, minute % 5, 5), leds[(((minute/5)+1)%12)+1]);
+    /* Outer ring */    
+    leds[((minute/5)%12)+13] = fade(Minute_Color, 5 - (minute % 5), 5);
+    leds[(((minute/5)+1) %12)+13] = fade(Minute_Color, minute % 5, 5);
     /* Seconds */
-    leds[((second/5)%12)+13] = mix(Second_Color, leds[((second/5)%12)+13]);
+    leds[((second/5)%12)+13] = mix(fade(Second_Color, 5 - (second%5), 5), leds[((second/5)%12)+13]);
+    leds[(((second/5)+1)%12)+13] = mix(fade(Second_Color, second%5, 5), leds[(((second/5)+1)%12)+13]);
+
 }
+
 
 rgb color_random()
 {
@@ -228,7 +286,7 @@ void clock_display_task(void *pvParameter)
 
         switch (display) {
             case CLOCK:
-                display_clock(leds);
+                display_clock_fade(leds);
                 delay(500);
                 break;
             case SMILEY:
