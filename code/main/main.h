@@ -23,15 +23,6 @@ extern EventGroupHandle_t wifi_event_group;
 
 /* Display modes */
 extern int displayMode;
-enum DISPLAY_MODE {
-    CLOCK,
-    SMILEY,
-    WALK,
-    HYPNO,
-    TWINKLE,
-    ALL,
-    RANDOM, /* Should stay the last entry */
-};
 
 /* Color */
 typedef struct color_rgb {

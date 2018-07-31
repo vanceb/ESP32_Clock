@@ -53,6 +53,7 @@ void ledStrandSetup(void) {
 }
 
 
+/* Blink the LEDs on the reverse of the board alternately */
 void blink_task(void *pvParameter)
 {
     /* Configure the IOMUX register for pad BLINK_GPIO (some pads are
@@ -80,6 +81,7 @@ void blink_task(void *pvParameter)
     }
 }
 
+/* Mix two rgb colors */
 rgb mix(rgb a, rgb b){
     rgb c;
     c.r = a.r + b.r;
@@ -88,6 +90,16 @@ rgb mix(rgb a, rgb b){
     return c;
 }
 
+/* Mix 2 rgb colors logarithmically */
+rgb log_mix(rgb a, rgb b)
+{
+    a.r |= b.r;
+    a.g |= b.g;
+    a.b |= b.b;
+    return a;
+}
+
+/* Fade a color */
 rgb fade(rgb color, int quotient, int divisor)
 {
     color.r = (int)((long)(color.r * quotient) / divisor);
@@ -96,6 +108,64 @@ rgb fade(rgb color, int quotient, int divisor)
     return color;
 }
 
+/* Fade color logarithmically */
+rgb log_fade(rgb color, unsigned int quotient, unsigned int divisor)
+{
+    /* Requesting off */
+    if (quotient == 0) {
+        color.r = color.g = color.b = 0;
+        return color;
+    }
+    /* Requesting full brightness */
+    if (divisor == 0){
+        color.r = color.r > 0 ? 255 : 0;
+        color.g = color.g > 0 ? 255 : 0;
+        color.b = color.b > 0 ? 255 : 0;
+        return color;
+    }
+    uint8_t shift;
+    /* Increase brightness */
+    if (quotient > divisor) {
+        shift = quotient / divisor;
+        color.r <<= shift;
+        color.g <<= shift;
+        color.b <<= shift;
+        color.r = color.r > 255 ? 255 : color.r;
+        color.g = color.g > 255 ? 255 : color.g;
+        color.b = color.b > 255 ? 255 : color.b;
+        return color;
+    }
+    /* Decrease brightness */
+    if (quotient < divisor) {
+        shift = divisor / quotient ;
+        color.r >>= shift;
+        color.g >>= shift;
+        color.b >>= shift;
+        color.r = color.r < 0 ? 0 : color.r;
+        color.g = color.g < 0 ? 0 : color.g;
+        color.b = color.b < 0 ? 0 : color.b;
+        return color;
+    }
+    return color;
+}
+
+/* Create a color from components logarithmically 
+ * Valkues of r, g, and b specify the shift and so 
+ * the colors are 2 ^ r. etc
+ */
+rgb log_color(int r, int g, int b)
+{
+    rgb c;
+    r = r>7 ? 7 : r;
+    g = g>7 ? 7 : g;
+    b = b>7 ? 7 : b;
+    c.r = r == 0 ? 0 : 1 << r;
+    c.g = g == 0 ? 0 : 1 << g;
+    c.b = b == 0 ? 0 : 1 << b;
+    return c;
+}
+
+/* Turn on all LEDs to a apecific color */
 void all(rgb *leds, rgb color)
 {
     int i;
@@ -104,11 +174,13 @@ void all(rgb *leds, rgb color)
     }
 }
 
+/* Turn all leds off */
 void reset_leds(rgb *leds) {
     rgb off = {0,0,0};
     all(leds, off);
 }
 
+/* Create a smiley of a specified color */
 void smiley(rgb *leds, rgb color) {
     reset_leds(leds);
     int i;
@@ -124,7 +196,9 @@ void smiley(rgb *leds, rgb color) {
     }
 }
 
-
+/* Walk all existing colours on one place and fill 
+ * the first place with a specific color 
+ */
 void walk(rgb *leds, rgb next)
 {
     int i;
@@ -134,11 +208,13 @@ void walk(rgb *leds, rgb next)
     leds[0] = next;
 }
 
+/* Who knows... */
 void hypno(rgb *leds, rgb color, long hold)
 {
     ESP_LOGD(TAG, "Displaying hypno");
 }
 
+/* Create and fade random colors */
 void twinkle(rgb *leds, uint32_t create, uint8_t fade)
 {
     int i;
@@ -158,6 +234,7 @@ void twinkle(rgb *leds, uint32_t create, uint8_t fade)
     }
 }
 
+/* Display a simple clock */
 void display_clock_simple(rgb *leds) 
 {
     int i;
@@ -182,8 +259,7 @@ void display_clock_simple(rgb *leds)
     rgb Second_Color = {0,16,16};
 
     /* Clear frame buffer */
-    for(i=0; i<NUM_PIXELS; i++)
-        leds[i].r = leds[i].g = leds[i].b = 0;
+    reset_leds(leds);
 
     /* Markers */
     leds[0] = Marker_Color;
@@ -199,7 +275,7 @@ void display_clock_simple(rgb *leds)
     leds[((second/5)%12)+13] = mix(Second_Color, leds[((second/5)%12)+13]);
 }
 
-
+/* Display a fading clock with logarithmic colours */
 void display_clock_fade(rgb *leds)
 {
     int i;
@@ -217,38 +293,37 @@ void display_clock_fade(rgb *leds)
     int minute = timeinfo.tm_min;
     int second = timeinfo.tm_sec;
 
-    /* Display the clock (Simple) */
-    rgb Marker_Color = {2,2,2};
-    rgb Hour_Color = {32,0,0};
-    rgb Minute_Color = {0,0,32};
-    rgb Second_Color = {0,32,0};
+    /* Set the clock colours */
+    rgb Marker_Color = log_color(1,1,1);
+    rgb Hour_Color = log_color(5,0,0);
+    rgb Minute_Color = log_color(0,0,5);
+    rgb Second_Color = log_color(0,5,0);
 
     /* Clear frame buffer */
-    for(i=0; i<NUM_PIXELS; i++)
-        leds[i].r = leds[i].g = leds[i].b = 0;
+    reset_leds(leds);
 
     /* Markers */
     leds[0] = Marker_Color;
     for (i=0; i<4; i++) {
         leds[25+i] = Marker_Color;
     }
-    /* Hour */
-    leds[((hour)%12)+1] = fade(Hour_Color, 60 - minute, 60);
-    leds[((hour)%12)+2] = fade(Hour_Color, minute, 60);
-    /* Minute */
+    /* Hour - on the inner ring */
+    leds[((hour)%12)+1] = log_fade(Hour_Color, 60 - minute, 60);
+    leds[((hour+1)%12)+1] = log_fade(Hour_Color, minute, 60);
+    /* Minute - on both rings */
     /* Inner ring */
-    leds[((minute/5)%12)+1] = mix(fade(Minute_Color, 5 - (minute % 5), 5), leds[((minute/5)%12)+1]);
-    leds[(((minute/5)+1) %12)+1] = mix(fade(Minute_Color, minute % 5, 5), leds[(((minute/5)+1)%12)+1]);
+    leds[((minute/5)%12)+1] = log_mix(log_fade(Minute_Color, 5 - (minute % 5), 5), leds[((minute/5)%12)+1]);
+    leds[(((minute/5)+1) %12)+1] = log_mix(log_fade(Minute_Color, minute % 5, 5), leds[(((minute/5)+1)%12)+1]);
     /* Outer ring */    
-    leds[((minute/5)%12)+13] = fade(Minute_Color, 5 - (minute % 5), 5);
-    leds[(((minute/5)+1) %12)+13] = fade(Minute_Color, minute % 5, 5);
-    /* Seconds */
-    leds[((second/5)%12)+13] = mix(fade(Second_Color, 5 - (second%5), 5), leds[((second/5)%12)+13]);
-    leds[(((second/5)+1)%12)+13] = mix(fade(Second_Color, second%5, 5), leds[(((second/5)+1)%12)+13]);
-
+    leds[((minute/5)%12)+13] = log_fade(Minute_Color, 5 - (minute % 5), 5);
+    leds[(((minute/5)+1) %12)+13] = log_fade(Minute_Color, minute % 5, 5);
+    /* Seconds - on the outer ring */
+    leds[((second/5)%12)+13] = log_mix(log_fade(Second_Color, 5 - (second%5), 5), leds[((second/5)%12)+13]);
+    leds[(((second/5)+1)%12)+13] = log_mix(log_fade(Second_Color, second%5, 5), leds[(((second/5)+1)%12)+13]);
 }
 
 
+/* Generate a random colour */
 rgb color_random()
 {
     rgb c = {0,0,0};
@@ -262,48 +337,71 @@ rgb color_random()
     return c;
 }
 
+/* Generate a random logarithmic color */
+rgb log_color_random()
+{
+    rgb c = {0,0,0};
+    while ((c.r | c.g | c.b) == 0) 
+    {
+        /* Generate a random colour */
+        c.r = 1 << ((uint8_t)esp_random() & 0x07);
+        c.g = 1 << ((uint8_t)esp_random() & 0x07);
+        c.b = 1 << ((uint8_t)esp_random() & 0x07);
+    }
+    return c;
+}
 
+/* Main task that controls the display */
 void clock_display_task(void *pvParameter) 
 {
     int i;
+    /* Create the pointer to the strand used by the library */
     strand_t *strand = &STRANDS[0];
+    /* Create a display buffer used by our code */
     rgb leds[strand->numPixels];
 
     rgb color;
+
     //int displayMode = request_display_mode;
-    int displayMode = CLOCK;
     rgb request_color = {0,0,0};
+    int request_display_mode = 1;
     int display;
 
+    /* The main forever loop */
     for(;;) {
+        /* Report the stack high water mark */
         ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
         if ((request_color.r | request_color.g | request_color.b) == 0) 
             color = color_random();
-        if (displayMode == RANDOM && (uint8_t)esp_random() < 16)
+        if (request_display_mode == 0 && (uint8_t)esp_random() < 4) {
             display = (uint8_t)esp_random() % 6;
-        else
-            display = displayMode;
-
+            ESP_LOGD(TAG, "Set random display mode to %d", display);
+        } else {
+            display = request_display_mode;
+        }
         switch (display) {
-            case CLOCK:
+            case 0:
+                /* Go round again until we pick a valid option */
+                break;
+            case 1:
                 display_clock_fade(leds);
                 delay(500);
                 break;
-            case SMILEY:
+            case 2:
                 smiley(leds, color);
                 delay(2000);
                 break;
-            case WALK:
+            case 3:
                 walk(leds, color);
                 delay(100);
                 break;
-            case HYPNO:
+            case 4:
                 hypno(leds, color, 20);
                 break;
-            case TWINKLE:
+            case 5:
                 twinkle(leds, 0x00800000, 2);
                 break;
-            case ALL:
+            case 6:
                 all(leds, color);
                 delay(2000);
             default:

@@ -112,10 +112,6 @@ void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
 
 */
 void aws_iot_task(void *param) {
-    /* Declare external variables used for communication */
-    int request_display_mode = RANDOM;
-    rgb request_color = {0,0,0};
-
     /* Create a payload buffer */
     char cPayload[1000];
 

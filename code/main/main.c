@@ -198,8 +198,8 @@ void app_main()
     ESP_ERROR_CHECK( err );
 
     /* Declare external variables used for communication */
-    int request_display_mode = RANDOM;
-    rgb request_color = {0,0,0};
+    //int request_display_mode = 0;
+    //rgb request_color = {0,0,0};
 
     /* Scan I2C */
     //i2cscanner(22, 23);
