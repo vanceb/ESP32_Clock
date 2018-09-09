@@ -2,6 +2,7 @@
 #include "main.h"
 #include "clock_control.h"
 #include "keyvalue.h"
+#include "ota.h"
 
 
 // c libraries
@@ -70,17 +71,53 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
     ESP_LOGI(TAG, "Subscribe callback");
     ESP_LOGI(TAG, "%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, (char *)params->payload);
     /* Create a null terminated string from the payload */
-    int i;
+    int i, mode;
+    char *command, *key, *value;
+    key_value_pair *root;
     char str_payload[params->payloadLen +1];
     for (i=0;  i<params->payloadLen; i++)
         str_payload[i] = ((char *) params->payload)[i];
     str_payload[i] = '\0';
     /* Parse the payload for key value pairs */
     key_value_pair *kv = parse_kv(str_payload);
+    root = kv;
     /* Just print them out for the moment... */
     while (kv->next) {
         kv = kv->next;
         ESP_LOGI(TAG, "%s: %s", kv->key, kv->value);
+    }
+    /* First attempt at sending a command through mqtt */
+    command = get_value(root, "cmd");
+    if (*command != '/0') {
+        ESP_LOGD(TAG, "Command: '%s'", command);
+        /* Check for mode change */
+        if (strcmp(command, "mode") == 0) {
+            value = get_value(root, "mode");
+            ESP_LOGI(TAG, "Setting clock display mode to %s", value);
+            request_display_mode = atoi(value);
+        }
+        /* Check for firmware upgrade */
+        if (strcmp(command, "upgrade") == 0) {
+            char *firmware_url = get_value(root, "url");
+            char *firmware_sha256 = get_value(root, "sha256");
+            /* Check to see we have all we need for the upgrade */
+            if (*firmware_url == '/0' || *firmware_sha256 == '/0') {
+                ESP_LOGE(TAG, "Received mqtt upgrade request without url or sha256");
+            } else {
+                /* We can start the upgrade */
+                ota_error_t err;
+                err = ota_update(firmware_url, firmware_sha256);
+                if (err != OTA_OK) {
+                    ESP_LOGE(TAG, "Error performing OTA upgrade - Not upgraded");
+                } else {
+                    /* OTA upgrade was successful */
+                    ESP_LOGI(TAG, "OTA upgrade successful. Prepare to restart system!");
+                    esp_restart();
+                }
+            }
+        }
+    } else {
+        ESP_LOGE(TAG, "Received mqtt data without a command");
     }
 }
 

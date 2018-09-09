@@ -21,6 +21,11 @@
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 extern EventGroupHandle_t wifi_event_group;
 
+/* The event group allows multiple bits for each event,
+   but we only care about one event - are we connected
+   to the AP with an IP? */
+extern const int CONNECTED_BIT;
+
 /* Display modes */
 extern int displayMode;
 
@@ -39,11 +44,6 @@ typedef struct color_hsv {
 
 extern rgb request_color;
 extern int request_display_mode;
-
-/* The event group allows multiple bits for each event,
-   but we only care about one event - are we connected
-   to the AP with an IP? */
-extern const int CONNECTED_BIT;
 
 // Some defines to improve readability
 #define nullptr NULL

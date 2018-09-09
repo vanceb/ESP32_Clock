@@ -33,7 +33,7 @@
 
 #include <time.h>
 #include <sys/time.h>
-#include "apps/sntp/sntp.h"
+#include "lwip/apps/sntp.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -105,10 +105,9 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     wifi_config_t wifi_config = {
         .sta = {
-            
             .ssid = EXAMPLE_WIFI_SSID,
             .password = EXAMPLE_WIFI_PASS,
-           /* 
+            /*
             .ssid = "rlab",
             .password = "hackmenow",
             */
@@ -123,6 +122,12 @@ static void initialise_wifi(void)
 void i2cscanner(int sda_pin, int scl_pin) {
     static char tag[] = "i2cscanner";
 	ESP_LOGD(tag, ">> i2cScanner");
+    /* Set pins as outputs */
+    if (i2c_set_pin(I2C_NUM_0, sda_pin, scl_pin, GPIO_PULLUP_DISABLE, GPIO_PULLUP_DISABLE, I2C_MODE_MASTER) != ESP_OK) {
+        ESP_LOGE(TAG, "I2C GPIO pin configuration error");
+    }
+
+    /* Set up I2C configuration */
 	i2c_config_t conf;
 	conf.mode = I2C_MODE_MASTER;
 	conf.sda_io_num = sda_pin;
@@ -130,9 +135,14 @@ void i2cscanner(int sda_pin, int scl_pin) {
 	conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
 	conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
 	conf.master.clk_speed = 100000;
-	i2c_param_config(I2C_NUM_0, &conf);
-
-	i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0);
+    /* Set configuration */
+	if (i2c_param_config(I2C_NUM_0, &conf) != ESP_OK) {
+        ESP_LOGE(TAG, "I2C configuration failed");
+    }
+    /* Install I2C driver */
+	if (i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0) != ESP_OK) {
+        ESP_LOGE(TAG, "I2C driver install failed");
+    }
 
 	int i;
 	esp_err_t espRc;
@@ -153,7 +163,7 @@ void i2cscanner(int sda_pin, int scl_pin) {
 		} else {
 			printf(" --");
 		}
-		ESP_LOGD(tag, "i=%d, rc=%d (0x%x)", i, espRc, espRc);
+		//ESP_LOGD(tag, "i=%d, rc=%d (0x%x)", i, espRc, espRc);
 		i2c_cmd_link_delete(cmd);
 	}
 	printf("\n");
@@ -202,7 +212,7 @@ void app_main()
     //rgb request_color = {0,0,0};
 
     /* Scan I2C */
-    //i2cscanner(22, 23);
+    i2cscanner(22, 23);
 
     // Setup wifi
     initialise_wifi();
@@ -223,7 +233,6 @@ void app_main()
 
     // Set timezone to UK Time and print local time
     setenv("TZ", "GMT0BST,M3.5.0/1,M10.5.0", 1);
-    //setenv("TZ", "EST5EDT,M3.2.0/2,M11.1.0", 1);
     tzset();
     localtime_r(&now, &timeinfo);
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
@@ -235,5 +244,5 @@ void app_main()
     // Create long-running tasks
     xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
     xTaskCreate(&blink_task, "blink_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-    xTaskCreate(&clock_display_task, "walk_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    xTaskCreate(&clock_display_task, "display_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }

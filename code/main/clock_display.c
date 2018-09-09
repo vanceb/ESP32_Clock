@@ -28,6 +28,10 @@ strand_t STRANDS[] = {
 
 int STRANDCNT = sizeof(STRANDS)/sizeof(STRANDS[0]);
 
+/* External Global Variables */
+rgb request_color = {0,0,0};
+int request_display_mode=1;
+
 /* Convenience function to set up the LED strands
 */
 void ledStrandSetup(void) {
@@ -202,10 +206,10 @@ void smiley(rgb *leds, rgb color) {
 void walk(rgb *leds, rgb next)
 {
     int i;
-    for (i=1; i<NUM_PIXELS; i++) {
+    for (i=NUM_PIXELS - 1; i>0; i--) {
         leds[i] = leds[i-1];
     }
-    leds[0] = next;
+    leds[i] = next;
 }
 
 /* Who knows... */
@@ -254,9 +258,9 @@ void display_clock_simple(rgb *leds)
 
     /* Display the clock (Simple) */
     rgb Marker_Color = {2,2,2};
-    rgb Hour_Color = {16,0,16};
-    rgb Minute_Color = {16,16,0};
-    rgb Second_Color = {0,16,16};
+    rgb Hour_Color = {32,0,0};
+    rgb Minute_Color = {0,0,32};
+    rgb Second_Color = {0,32,0};
 
     /* Clear frame buffer */
     reset_leds(leds);
@@ -363,8 +367,7 @@ void clock_display_task(void *pvParameter)
     rgb color;
 
     //int displayMode = request_display_mode;
-    rgb request_color = {0,0,0};
-    int request_display_mode = 1;
+
     int display;
 
     /* The main forever loop */
@@ -388,22 +391,25 @@ void clock_display_task(void *pvParameter)
                 delay(500);
                 break;
             case 2:
-                smiley(leds, color);
-                delay(2000);
+                display_clock_simple(leds);
+                delay(500);
                 break;
             case 3:
                 walk(leds, color);
                 delay(100);
                 break;
             case 4:
-                hypno(leds, color, 20);
+                smiley(leds, color);
+                delay(2000);
                 break;
             case 5:
-                twinkle(leds, 0x00800000, 2);
+                twinkle(leds, 0x00800000, 20);
+                delay(20);
                 break;
             case 6:
                 all(leds, color);
                 delay(2000);
+                break;
             default:
                 ESP_LOGE(TAG, "Hit Default Display Mode - Should not happen");
                 break;
