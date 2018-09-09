@@ -1,0 +1,10 @@
+(sym_lib_table
+  (lib (name ESP32_Clock-rescue)(type Legacy)(uri ${KIPRJMOD}/ESP32_Clock-rescue.lib)(options "")(descr ""))
+  (lib (name ESP32-footprints-Shem-Lib)(type Legacy)(uri ${KIPRJMOD}/libs/ESP32-footprints-Shem-Lib.lib)(options "")(descr ""))
+  (lib (name mcp73831)(type Legacy)(uri ${KIPRJMOD}/libs/custom/mcp73831.lib)(options "")(descr ""))
+  (lib (name ws2812b)(type Legacy)(uri ${KIPRJMOD}/libs/custom/ws2812b.lib)(options "")(descr ""))
+  (lib (name usb_otg)(type Legacy)(uri ${KIPRJMOD}/libs/custom/usb_otg.lib)(options "")(descr ""))
+  (lib (name mma8452q)(type Legacy)(uri ${KIPRJMOD}/libs/custom/mma8452q.lib)(options "")(descr ""))
+  (lib (name apds-9960)(type Legacy)(uri ${KIPRJMOD}/libs/custom/apds-9960.lib)(options "")(descr ""))
+  (lib (name BA33DD0WHFP)(type Legacy)(uri ${KIPRJMOD}/libs/custom/BA33DD0WHFP.lib)(options "")(descr ""))
+)
