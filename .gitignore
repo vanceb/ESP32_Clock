@@ -3,3 +3,6 @@ code/build/
 *.bak
 *.old
 *.kicad_pcb-bak
+
+# Don't store keys!
+*.pem

@@ -99,14 +99,14 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
         /* Check for firmware upgrade */
         if (strcmp(command, "upgrade") == 0) {
             char *firmware_url = get_value(root, "url");
-            char *firmware_sha256 = get_value(root, "sha256");
             /* Check to see we have all we need for the upgrade */
-            if (*firmware_url == '/0' || *firmware_sha256 == '/0') {
-                ESP_LOGE(TAG, "Received mqtt upgrade request without url or sha256");
+            if (*firmware_url == '/0') {
+                ESP_LOGE(TAG, "Received mqtt upgrade request without url");
             } else {
                 /* We can start the upgrade */
+                ESP_LOGI(TAG, "Starting OTA upgrade from: %s", firmware_url);
                 ota_error_t err;
-                err = ota_update(firmware_url, firmware_sha256);
+                err = ota_update(firmware_url);
                 if (err != OTA_OK) {
                     ESP_LOGE(TAG, "Error performing OTA upgrade - Not upgraded");
                 } else {

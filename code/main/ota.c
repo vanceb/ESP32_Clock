@@ -28,7 +28,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
-static const char *TAG = "native_ota_example";
+static const char *TAG = "OTA Upgrade";
 /*an ota data write buffer ready to write to the flash*/
 static char ota_write_data[BUFFSIZE + 1] = { 0 };
 extern const uint8_t server_cert_pem_start[] asm("_binary_s3_ca_cert_pem_start");
@@ -58,9 +58,9 @@ void sha256_string (const uint8_t *image_hash, char *hash_string)
     }
 }
 
-int ota_update(char *firmware_url, char *firmware_sha256)
+int ota_update(char *firmware_url)
 {
-    ESP_LOGD(TAG, "OTA Update from %s: sha256 %s", firmware_url, firmware_sha256);
+    ESP_LOGD(TAG, "OTA Update requested from %s", firmware_url);
     esp_err_t err;
     /* update handle : set by esp_ota_begin(), must be freed via esp_ota_end() */
     esp_ota_handle_t update_handle = 0 ;
@@ -148,18 +148,7 @@ int ota_update(char *firmware_url, char *firmware_sha256)
         return OTA_ERROR;
     }
 
-    /* Check the sha256 matches what we expect */
-    uint8_t sha_256[HASH_LEN] = { 0 };
-    char hash[HASH_LEN * 2 + 1];
-    esp_partition_get_sha256(update_partition, sha_256);
-    sha256_string(sha_256, hash);
-    ESP_LOGI(TAG, "Hash of the downloaded image is %s", hash);
-    if (strcmp(hash, firmware_sha256) != 0) {
-        ESP_LOGE(TAG, "Firmware hash %s, does not match expected hash %s", hash, firmware_sha256);
-        return OTA_SHA256_MISMATCH;
-    }
-
-    /* Checked out OK, so let's set the boot partition to the new firmware */
+    /* let's set the boot partition to the new firmware */
     err = esp_ota_set_boot_partition(update_partition);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", esp_err_to_name(err));
