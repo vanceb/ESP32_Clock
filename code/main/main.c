@@ -52,8 +52,11 @@
 
 // Project local code
 #include "main.h"
-#include "clock_control.h"
+//#include "clock_control.h"
+#include "telemetry.h"
 #include "clock_display.h"
+
+#include "secrets.h"
 
 static const char *TAG = "esp32clock";
 
@@ -105,11 +108,11 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = EXAMPLE_WIFI_SSID,
-            .password = EXAMPLE_WIFI_PASS,
+            .ssid = WIFI_SSID,  // Defined in secrets.h
+            .password = WIFI_PASSWD,  // Defined in secrets.h
             /*
-            .ssid = "rlab",
-            .password = "hackmenow",
+            .ssid = RLAB_WIFI_SSID,
+            .password = RLAB_WIFI_PASSWD,
             */
         },
     };
@@ -242,7 +245,7 @@ void app_main()
     ledStrandSetup();
 
     // Create long-running tasks
-    xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(&telemetry_task, "telemetry_task", 9216, NULL, 5, NULL, 1);
     xTaskCreate(&blink_task, "blink_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
     xTaskCreate(&clock_display_task, "display_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }

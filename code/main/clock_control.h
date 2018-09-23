@@ -20,6 +20,9 @@ This contains the following functionality:
 
 */
 
+#define MAX_MQTT_PAYLOAD 1024
+#define MAX_MQTT_TOPIC 128
+
 // Function definitions
 void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
                                     IoT_Publish_Message_Params *params, void *pData);

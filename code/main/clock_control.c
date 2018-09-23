@@ -65,6 +65,23 @@ char HostAddress[255] = AWS_IOT_MQTT_HOST;
  */
 uint32_t port = AWS_IOT_MQTT_PORT;
 
+/* Global variables used for mqtt communication */
+
+/* Client details */
+AWS_IoT_Client client;
+
+/* Create a payload buffer */
+char cPayload[MAX_MQTT_PAYLOAD];
+
+/* Base mqtt topic */
+char MQTT_BASE[24];
+
+/* Full topic buffer */
+char cTopic[MAX_MQTT_TOPIC];
+
+/* Publish parameters */
+IoT_Publish_Message_Params paramsQOS0;
+
 
 void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
                                     IoT_Publish_Message_Params *params, void *pData) {
@@ -142,35 +159,21 @@ void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
     }
 }
 
-/* The main control task
- * 
- * Sets up the mqtt connectivity and registers callbacks for
- * incoming messages and disconnect events
-
-*/
-void aws_iot_task(void *param) {
-    /* Create a payload buffer */
-    char cPayload[1000];
-
+IoT_Error_t mqtt_init(void)
+{
     /* Factory coded MAC used as ID */
     char ESP_ID[18];
     uint8_t mac[6]; 
     esp_efuse_mac_get_default(mac);
     sprintf(ESP_ID, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     ESP_LOGD(TAG, "ESP ID: %s", ESP_ID);
-    char MQTT_BASE[24];
     sprintf(MQTT_BASE, "%s/%s", PROJECT, (char *)ESP_ID);
-
-    int32_t i = 0;
 
     IoT_Error_t rc = FAILURE;
 
-    AWS_IoT_Client client;
     IoT_Client_Init_Params mqttInitParams = iotClientInitParamsDefault;
     IoT_Client_Connect_Params connectParams = iotClientConnectParamsDefault;
 
-    IoT_Publish_Message_Params paramsQOS0;
-    //IoT_Publish_Message_Params paramsQOS1;
 
     ESP_LOGI(TAG, "AWS IoT SDK Version %d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 
@@ -263,14 +266,32 @@ void aws_iot_task(void *param) {
         abort();
     }
 
+    /* Prepare params for mqtt publish */
+    paramsQOS0.qos = QOS0;
+    paramsQOS0.payload = (void *) cPayload;
+    paramsQOS0.isRetained = 0;
+
+    return rc;
+}
+
+/* The main control task
+ * 
+ * Sets up the mqtt connectivity and registers callbacks for
+ * incoming messages and disconnect events
+
+*/
+void aws_iot_task(void *param) {
+    
+    int32_t i = 0;
+
+    IoT_Error_t rc = FAILURE;
+
+    rc = mqtt_init();
+
     /*
      * Prepare to send on the heartbeat topic
      */
     sprintf(cPayload, "%s : %d ", "Heartbeat: ", i);
-
-    paramsQOS0.qos = QOS0;
-    paramsQOS0.payload = (void *) cPayload;
-    paramsQOS0.isRetained = 0;
 
     /*
     paramsQOS1.qos = QOS1;
