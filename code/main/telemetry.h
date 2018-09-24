@@ -3,7 +3,9 @@
 
 /* Define maximums */
 #define TELEMETRY_MAX_TOPIC_LEN 32
-#define TELEMETRY_MAX_MESSAGE_LEN 1024
+#define TELEMETRY_MAX_MESSAGE_LEN 128
+
+#define HEARTBEAT_PERIOD_MS 30000
 
 /* Define a simple type for a telemetry message */
 typedef struct telemetry_message {
@@ -17,5 +19,6 @@ extern QueueHandle_t telemetry_tx_queue;
 
 /* Public functions */
 void telemetry_task(void *pvParameters);
+int send_telemetry(char *topic, char *message);
 
 #endif

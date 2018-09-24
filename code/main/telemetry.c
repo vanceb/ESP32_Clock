@@ -29,8 +29,46 @@ static const char *TAG = "telemetry";
 extern const uint8_t letsencrypt_x3_pem_start[] asm("_binary_letsencrypt_x3_pem_start");
 extern const uint8_t letsencrypt_x3_pem_end[]   asm("_binary_letsencrypt_x3_pem_end");
 
-/* Define the external tx queue */
+/* Create a reference to the tx queue */
 QueueHandle_t telemetry_tx_queue;
+
+/* Declare base topic */
+char base_topic[64];
+
+/* Define creators and destructors for telemetry messages */
+telemetry_message_t *newMessage()
+{
+    ESP_LOGD(TAG, "Creating a new telemetry message");
+    telemetry_message_t *msg = (telemetry_message_t *) malloc(sizeof(telemetry_message_t));
+    if (msg == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate heap for telemetry structure"); 
+        return NULL;
+    }
+    msg->topic = (char *) malloc(TELEMETRY_MAX_TOPIC_LEN + strlen(base_topic) + 1);
+    if (msg->topic == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate heap for telemetry structure"); 
+        free(msg);
+        return NULL;
+    }
+    msg->message = (char *) malloc(TELEMETRY_MAX_MESSAGE_LEN + 1);
+    if (msg->message == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate heap for telemetry structure"); 
+        free(msg->topic);
+        free(msg);
+        return NULL;
+    }
+    ESP_LOGD(TAG, "Successfully created a new telemetry message");
+    return msg;
+}
+
+void freeMessage(telemetry_message_t *msg)
+{
+    if (msg != NULL) {
+        free(msg->message);
+        free(msg->topic);
+        free(msg);
+    }
+}
 
 
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
@@ -40,8 +78,11 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     // your_context_t *context = event->context;
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
-            /* Subscribe to topics here */
             ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+            /* Queue a startup messgae */
+            send_telemetry("status", "Startup mqtt telemetry");
+    
+            /* Subscribe to topics here */
             msg_id = esp_mqtt_client_subscribe(client, "/esp32clock/qos0", 0);
             ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
@@ -95,8 +136,21 @@ static esp_mqtt_client_handle_t telemetry_init(void)
         .cert_pem = (const char *)letsencrypt_x3_pem_start,
     };
 
+    /* Create the mqtt client from the config */
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_start(client);
+    
+    /* Define base topic */
+    char ESP_ID[18];
+    uint8_t mac[6]; 
+
+    /* Factory coded MAC used as ID */
+    esp_efuse_mac_get_default(mac);
+    sprintf(ESP_ID, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    ESP_LOGD(TAG, "ESP ID: %s", ESP_ID);
+    sprintf(base_topic, "%s/%s/", PROJECT, (char *)ESP_ID);
+    ESP_LOGI(TAG, "Base mqtt topic set as: %s", base_topic);
+
     /* Create the tx queue */
     telemetry_tx_queue = xQueueCreate(TELEMETRY_MAX_TX_QUEUE, sizeof(telemetry_message_t *));
     if (telemetry_tx_queue == NULL) {
@@ -107,37 +161,53 @@ static esp_mqtt_client_handle_t telemetry_init(void)
     return client;
 }
 
+
+BaseType_t send_telemetry(char *topic, char *message)
+{
+    telemetry_message_t *telemetry = newMessage();
+    if (telemetry == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate memory for telemetry message");
+        abort();
+    }
+    ESP_LOGD(TAG, "About to copy %s %s to message", topic, message);
+    strcpy(telemetry->topic, base_topic);
+    strncat(telemetry->topic, topic, TELEMETRY_MAX_TOPIC_LEN);
+    strncpy(telemetry->message, message, TELEMETRY_MAX_MESSAGE_LEN);
+    ESP_LOGD(TAG, "Queueing:\nt: %s\nm: %s", telemetry->topic, telemetry->message);
+    return xQueueSend(telemetry_tx_queue, (void *) &telemetry, 0);
+}
+
+
 void telemetry_task(void *pvParameters)
 {
     esp_mqtt_client_handle_t client = telemetry_init();
-    
-    /* Factory coded MAC used as ID */
-    char ESP_ID[18];
-    uint8_t mac[6]; 
-    char base_topic[strlen(PROJECT) + strlen(ESP_ID) + 2];
-    char topic[strlen(base_topic) + TELEMETRY_MAX_TOPIC_LEN];
-    char message[TELEMETRY_MAX_MESSAGE_LEN + 1];
+
     int msg_id;
     telemetry_message_t *telemetry_message;
+    char hb_msg[TELEMETRY_MAX_MESSAGE_LEN];
+    unsigned long last_hb = 0;
 
-    esp_efuse_mac_get_default(mac);
-    sprintf(ESP_ID, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    ESP_LOGD(TAG, "ESP ID: %s", ESP_ID);
-    sprintf(base_topic, "%s/%s", PROJECT, (char *)ESP_ID);
 
     ESP_LOGI(TAG, "Starting the telemetry transmit loop...");
     /* mqtt transmit processing loop */
     for(;;) {
         if (xQueueReceive(telemetry_tx_queue, &(telemetry_message), 15000/portTICK_PERIOD_MS)) {
-            /* We have a message to process */
-            strcpy(topic, base_topic);
-            strncat(topic, telemetry_message->topic, TELEMETRY_MAX_TOPIC_LEN);
-            strncpy(message, telemetry_message->message, TELEMETRY_MAX_MESSAGE_LEN);
-            ESP_LOGI(TAG, "About to transmit telemetry...\nt: %s\nm: %s", topic, message);
-            msg_id = esp_mqtt_client_publish(client, topic, message, 0, 0, 0);
+            /* Send the message */
+            ESP_LOGI(TAG, "About to transmit telemetry...\nt: %s\nm: %s", telemetry_message->topic, telemetry_message->message);
+            msg_id = esp_mqtt_client_publish(client, telemetry_message->topic, telemetry_message->message, 0, 0, 0); 
             ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+            /* Free the message memory */
+            freeMessage(telemetry_message);
         }
         ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+
+        /* Send heartbeat */
+        if (clock_ms() > last_hb + HEARTBEAT_PERIOD_MS) {
+            last_hb = clock_ms();
+            sprintf(hb_msg, "uptime %0.3f\nversion %d", (clock_ms() / 1000.0), VERSION);
+            send_telemetry("heartbeat", hb_msg);
+        }
+
     }
     /* Shouldn't get here */
     ESP_LOGE(TAG, "An error occurred in the telemetry transmit loop.");
