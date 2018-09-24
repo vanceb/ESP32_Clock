@@ -25,6 +25,7 @@
 #include "secrets.h"
 
 static const char *TAG = "telemetry";
+const int MQTT_CONNECTED_BIT = BIT1;
 
 extern const uint8_t letsencrypt_x3_pem_start[] asm("_binary_letsencrypt_x3_pem_start");
 extern const uint8_t letsencrypt_x3_pem_end[]   asm("_binary_letsencrypt_x3_pem_end");
@@ -38,7 +39,7 @@ char base_topic[64];
 /* Define creators and destructors for telemetry messages */
 telemetry_message_t *newMessage()
 {
-    ESP_LOGD(TAG, "Creating a new telemetry message");
+    ESP_LOGD(TAG, "Creating a new telemetry message. Heap available: %ul", esp_get_free_heap_size());
     telemetry_message_t *msg = (telemetry_message_t *) malloc(sizeof(telemetry_message_t));
     if (msg == NULL) {
         ESP_LOGE(TAG, "Unable to allocate heap for telemetry structure"); 
@@ -57,16 +58,18 @@ telemetry_message_t *newMessage()
         free(msg);
         return NULL;
     }
-    ESP_LOGD(TAG, "Successfully created a new telemetry message");
+    ESP_LOGD(TAG, "Successfully created a new telemetry message. Heap left: %ul", esp_get_free_heap_size());
     return msg;
 }
 
 void freeMessage(telemetry_message_t *msg)
 {
     if (msg != NULL) {
+        ESP_LOGD(TAG, "About to free message.  Heap available: %ul", esp_get_free_heap_size());
         free(msg->message);
         free(msg->topic);
         free(msg);
+        ESP_LOGD(TAG, "Freed memory.  Heap available: %ul", esp_get_free_heap_size());
     }
 }
 
@@ -75,33 +78,26 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
+    char sub_topic[TELEMETRY_MAX_TOPIC_LEN + strlen(base_topic)];
     // your_context_t *context = event->context;
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
+            xEventGroupSetBits(wifi_event_group, MQTT_CONNECTED_BIT);
             ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-            /* Queue a startup messgae */
-            send_telemetry("status", "Startup mqtt telemetry");
-    
             /* Subscribe to topics here */
-            msg_id = esp_mqtt_client_subscribe(client, "/esp32clock/qos0", 0);
+            strcpy(sub_topic, base_topic);
+            strncat(sub_topic, "cmd", TELEMETRY_MAX_TOPIC_LEN);
+            msg_id = esp_mqtt_client_subscribe(client, sub_topic, 0);
             ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-            msg_id = esp_mqtt_client_subscribe(client, "/esp32clock/qos1", 1);
-            ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-            msg_id = esp_mqtt_client_unsubscribe(client, "/esp32clock/qos1");
-            ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
             break;
-            case MQTT_EVENT_DISCONNECTED:
-            /* Note disconnect here */
+        case MQTT_EVENT_DISCONNECTED:
+            xEventGroupClearBits(wifi_event_group, MQTT_CONNECTED_BIT);
             ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
             break;
 
         case MQTT_EVENT_SUBSCRIBED:
             /* Post successful subscribe */
             ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-            msg_id = esp_mqtt_client_publish(client, "/esp32clock/qos0", "data", 0, 0, 0);
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
             break;
         case MQTT_EVENT_UNSUBSCRIBED:
             /* Post successful unsubscribe */
@@ -186,26 +182,39 @@ void telemetry_task(void *pvParameters)
     telemetry_message_t *telemetry_message;
     char hb_msg[TELEMETRY_MAX_MESSAGE_LEN];
     unsigned long last_hb = 0;
+    EventBits_t bits;
 
+    /* Queue a startup messgae */
+    send_telemetry("status", "Startup mqtt telemetry");
+    
 
     ESP_LOGI(TAG, "Starting the telemetry transmit loop...");
     /* mqtt transmit processing loop */
     for(;;) {
-        if (xQueueReceive(telemetry_tx_queue, &(telemetry_message), 15000/portTICK_PERIOD_MS)) {
-            /* Send the message */
-            ESP_LOGI(TAG, "About to transmit telemetry...\nt: %s\nm: %s", telemetry_message->topic, telemetry_message->message);
-            msg_id = esp_mqtt_client_publish(client, telemetry_message->topic, telemetry_message->message, 0, 0, 0); 
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-            /* Free the message memory */
-            freeMessage(telemetry_message);
-        }
-        ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+        bits = xEventGroupWaitBits(wifi_event_group, MQTT_CONNECTED_BIT,
+                            false, true, 0);
+        if (bits & MQTT_CONNECTED_BIT){
+            /* We are connected to mqtt broker */
+            if (xQueueReceive(telemetry_tx_queue, &(telemetry_message), 15000/portTICK_PERIOD_MS)) {
+                /* We got a message from the queue so send it */
+                ESP_LOGD(TAG, "About to transmit telemetry...\nt: %s\nm: %s", telemetry_message->topic, telemetry_message->message);
+                msg_id = esp_mqtt_client_publish(client, telemetry_message->topic, telemetry_message->message, 0, 0, 0); 
+                ESP_LOGI(TAG, "Published:\nt: %s\nm: %s", telemetry_message->topic, telemetry_message->message);
+                /* Free the message memory */
+                freeMessage(telemetry_message);
+            }
+            ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
 
-        /* Send heartbeat */
-        if (clock_ms() > last_hb + HEARTBEAT_PERIOD_MS) {
-            last_hb = clock_ms();
-            sprintf(hb_msg, "uptime %0.3f\nversion %d", (clock_ms() / 1000.0), VERSION);
-            send_telemetry("heartbeat", hb_msg);
+            /* Send heartbeat */
+            if (clock_ms() > last_hb + HEARTBEAT_PERIOD_MS) {
+                last_hb = clock_ms();
+                sprintf(hb_msg, "uptime %0.3f\nversion %d", (clock_ms() / 1000.0), VERSION);
+                send_telemetry("heartbeat", hb_msg);
+            }
+        } else {
+            /* We are not connected to the mqtt broker */
+            ESP_LOGI(TAG, "Not connected to the mqtt broker, waiting for reconnect...");
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
 
     }
