@@ -126,7 +126,10 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
+    int chars_copied;
     char sub_topic[TELEMETRY_MAX_TOPIC_LEN + strlen(base_topic)];
+    char rx_topic[RX_TELEMETRY_MAX_TOPIC_LEN];
+    char rx_msg[RX_TELEMETRY_MAX_MESSAGE_LEN];
     // your_context_t *context = event->context;
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
@@ -158,10 +161,28 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         case MQTT_EVENT_DATA:
             /* Data received from mqtt server, so deal with it */
             ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-            printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-            printf("DATA=%.*s\r\n", event->data_len, event->data);
-            send_telemetry("echo", event->data);
-            parse_command(event->data);
+            /* Sanity check on message lengths */
+            if (event->topic_len > RX_TELEMETRY_MAX_TOPIC_LEN - 1) {
+                ESP_LOGE(TAG, "Received message topic too long: Rx:%dm Max:%d",
+                        event->topic_len, RX_TELEMETRY_MAX_TOPIC_LEN - 1);
+                send_telemetry("error", "Rx topic too long!");
+                return ESP_FAIL;
+            }
+            if (event->topic_len > RX_TELEMETRY_MAX_MESSAGE_LEN - 1) {
+                ESP_LOGE(TAG, "Received message msg too long: Rx:%dm Max:%d",
+                        event->data_len, RX_TELEMETRY_MAX_MESSAGE_LEN - 1);
+                send_telemetry("error", "Rx msg too long!");
+                return ESP_FAIL;
+            }
+            /* Get the topic and payload as c strings */
+            strncpy(rx_topic, event->topic, event->topic_len);
+            rx_topic[event->topic_len] = '\0';
+            strncpy(rx_msg, event->data, event->data_len);
+            rx_msg[event->data_len] = '\0';
+            printf("TOPIC=%s\r\n", rx_topic);
+            printf("DATA=%s\r\n", rx_msg);
+            send_telemetry("echo", rx_msg);
+            parse_command(rx_msg);
             break;
         case MQTT_EVENT_ERROR:
             /* An mqtt error occurred */
@@ -217,10 +238,26 @@ BaseType_t send_telemetry(char *topic, char *message)
         abort();
     }
     ESP_LOGD(TAG, "About to copy %s %s to message", topic, message);
+    /* Sanity check topic length */
+    if (strlen(base_topic) + strlen(topic) > TELEMETRY_MAX_TOPIC_LEN) {
+        ESP_LOGE(TAG, "Send Telemetry topic length too long: %d, Max: %d",
+                 strlen(base_topic) + strlen(topic), TELEMETRY_MAX_TOPIC_LEN);
+        return -1; 
+    } 
+    /* Sanity check message length */
+    if (strlen(message) > TELEMETRY_MAX_MESSAGE_LEN) {
+        ESP_LOGE(TAG, "Send Telemetry message length too long: %d, Max: %d",
+                 strlen(message), TELEMETRY_MAX_MESSAGE_LEN);
+        return -1; 
+    } 
+    /* Prepare to queue message */
     strcpy(telemetry->topic, base_topic);
-    strncat(telemetry->topic, topic, TELEMETRY_MAX_TOPIC_LEN);
-    strncpy(telemetry->message, message, TELEMETRY_MAX_MESSAGE_LEN);
+    strncat(telemetry->topic, topic, TELEMETRY_MAX_TOPIC_LEN - 1);
+    telemetry->topic[strlen(base_topic) + strlen(topic)] = '\0';
+    strncpy(telemetry->message, message, TELEMETRY_MAX_MESSAGE_LEN - 1);
+    telemetry->message[strlen(message)] = '\0';
     ESP_LOGD(TAG, "Queueing:\nt: %s\nm: %s", telemetry->topic, telemetry->message);
+    //return xQueueSend(telemetry_tx_queue, (void *) telemetry, 0);
     return xQueueSend(telemetry_tx_queue, (void *) &telemetry, 0);
 }
 
@@ -231,7 +268,7 @@ void telemetry_task(void *pvParameters)
 
     int msg_id;
     char uptime_str[UPTIME_CHARS];
-    telemetry_message_t *telemetry_message;
+    telemetry_message_t *telemetry_message = newMessage();
     char hb_msg[TELEMETRY_MAX_MESSAGE_LEN];
     unsigned long last_hb = 0;
     EventBits_t bits;

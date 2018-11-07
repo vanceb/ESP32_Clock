@@ -110,10 +110,8 @@ static void initialise_wifi(void)
         .sta = {
             .ssid = WIFI_SSID,  // Defined in secrets.h
             .password = WIFI_PASSWD,  // Defined in secrets.h
-            /*
-            .ssid = RLAB_WIFI_SSID,
-            .password = RLAB_WIFI_PASSWD,
-            */
+            //.ssid = RLAB_WIFI_SSID,
+            //.password = RLAB_WIFI_PASSWD,
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);

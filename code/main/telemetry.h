@@ -4,11 +4,15 @@
 /* Define maximums */
 #define TELEMETRY_MAX_TOPIC_LEN 64
 #define TELEMETRY_MAX_MESSAGE_LEN 256
+/* Separately defined in case we want to send larger amounts of data */
+#define RX_TELEMETRY_MAX_TOPIC_LEN 64
+#define RX_TELEMETRY_MAX_MESSAGE_LEN 256
 
 #define HEARTBEAT_PERIOD_MS 30000
 
 /* Define a simple type for a telemetry message */
 typedef struct telemetry_message {
+    //char processed;
     char topic[TELEMETRY_MAX_TOPIC_LEN];
     char message[TELEMETRY_MAX_MESSAGE_LEN];
 } telemetry_message_t;

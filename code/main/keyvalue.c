@@ -20,6 +20,9 @@
 key_value_pair *new_kv(char *key, char *value) /* initialises kv pair */
 {
     key_value_pair *kv = (key_value_pair *) malloc(sizeof(key_value_pair));
+
+    #ifndef STATIC_KEY_VALUE
+
     if (key != NULL)
         kv->key = strdup(key);
     else
@@ -28,6 +31,24 @@ key_value_pair *new_kv(char *key, char *value) /* initialises kv pair */
         kv->value = strdup(value);
     else
         kv->value = NULL;
+
+    #else
+
+    if (key != NULL) {
+        strncpy(kv->key, key, MAX_KEY_LEN - 1);
+        kv->key[MAX_KEY_LEN] = '\0';
+    } else {
+        kv->key[0] = '\0';
+    }
+    if (value != NULL) {
+        strncpy(kv->value, value, MAX_VALUE_LEN);
+        kv->value[MAX_VALUE_LEN - 1] = '\0';
+    } else {
+        kv->value[0] = '\0';
+    }
+
+    #endif
+
     kv->next = NULL;
     return kv;
 }
@@ -40,12 +61,22 @@ key_value_pair *new_kv(char *key, char *value) /* initialises kv pair */
  */
 void free_kv(key_value_pair *kv)
 {
-    if (kv->next) {
-        free_kv(kv->next);
+    if (kv != NULL) {
+        /* Walk to the bottom of the linked list recursively */
+        if (kv->next) {
+            free_kv(kv->next);
+        }
+
+        #ifndef STATIC_KEY_VALUE
+        /* If we are dynamically allocating memory for the key and value then free that */
+        free(kv->key);
+        free(kv->value);
+
+        #endif
+
+        /* Free the main structure */
+        free(kv);
     }
-    free(kv->key);
-    free(kv->value);
-    free(kv);
 }
 
 
