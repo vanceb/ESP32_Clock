@@ -181,7 +181,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             rx_msg[event->data_len] = '\0';
             printf("TOPIC=%s\r\n", rx_topic);
             printf("DATA=%s\r\n", rx_msg);
-            send_telemetry("echo", rx_msg);
+            //send_telemetry("echo", rx_msg);
             parse_command(rx_msg);
             break;
         case MQTT_EVENT_ERROR:
@@ -284,6 +284,7 @@ void telemetry_task(void *pvParameters)
                             false, true, 0);
         if (bits & MQTT_CONNECTED_BIT){
             /* We are connected to mqtt broker */
+            ESP_LOGD(TAG, "Messages in queue: %d", uxQueueMessagesWaiting(telemetry_tx_queue));
             if (xQueueReceive(telemetry_tx_queue, &(telemetry_message), 15000/portTICK_PERIOD_MS)) {
                 /* We got a message from the queue so send it */
                 ESP_LOGD(TAG, "About to transmit telemetry...\nt: %s\nm: %s", telemetry_message->topic, telemetry_message->message);

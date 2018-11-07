@@ -144,10 +144,13 @@ int parse_one_kv(char *buffer, key_value_pair *kv)
     }
     /* Note start of the value */    
     start_v = buffer;
-    /* Should be terminated with a newline */
-    for (; *buffer != '\n'; ++buffer)
-        ;
-    *buffer++ = '\0'; /* Allow key string to be read directly from the buffer */
+    /* Should be terminated with a newline ***** */
+    while (*buffer != '\n' && *buffer != '\0') {
+        ++buffer;
+    }
+    if (*buffer == '\n') {
+        *buffer++ = '\0'; /* Allow key string to be read directly from the buffer */
+    }
 
     /* Work to the end of the list of KV */
     while (kv->next != NULL)

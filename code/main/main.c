@@ -108,10 +108,10 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = WIFI_SSID,  // Defined in secrets.h
-            .password = WIFI_PASSWD,  // Defined in secrets.h
-            //.ssid = RLAB_WIFI_SSID,
-            //.password = RLAB_WIFI_PASSWD,
+            //.ssid = WIFI_SSID,  // Defined in secrets.h
+            //.password = WIFI_PASSWD,  // Defined in secrets.h
+            .ssid = RLAB_WIFI_SSID,
+            .password = RLAB_WIFI_PASSWD,
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
