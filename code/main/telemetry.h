@@ -2,15 +2,15 @@
 #define TELEMETRY_H
 
 /* Define maximums */
-#define TELEMETRY_MAX_TOPIC_LEN 32
-#define TELEMETRY_MAX_MESSAGE_LEN 128
+#define TELEMETRY_MAX_TOPIC_LEN 64
+#define TELEMETRY_MAX_MESSAGE_LEN 256
 
 #define HEARTBEAT_PERIOD_MS 30000
 
 /* Define a simple type for a telemetry message */
 typedef struct telemetry_message {
-    char *topic;
-    char *message;
+    char topic[TELEMETRY_MAX_TOPIC_LEN];
+    char message[TELEMETRY_MAX_MESSAGE_LEN];
 } telemetry_message_t;
 
 /* Declare queue for transmit messages */

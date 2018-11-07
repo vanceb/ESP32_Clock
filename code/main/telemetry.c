@@ -23,6 +23,10 @@
 #include "main.h"
 #include "telemetry.h"
 #include "secrets.h"
+#include "keyvalue.h"
+#include "ota.h"
+
+#define UPTIME_CHARS 16 // The length of the uptime string in characters
 
 static const char *TAG = "telemetry";
 const int MQTT_CONNECTED_BIT = BIT1;
@@ -45,19 +49,6 @@ telemetry_message_t *newMessage()
         ESP_LOGE(TAG, "Unable to allocate heap for telemetry structure"); 
         return NULL;
     }
-    msg->topic = (char *) malloc(TELEMETRY_MAX_TOPIC_LEN + strlen(base_topic) + 1);
-    if (msg->topic == NULL) {
-        ESP_LOGE(TAG, "Unable to allocate heap for telemetry structure"); 
-        free(msg);
-        return NULL;
-    }
-    msg->message = (char *) malloc(TELEMETRY_MAX_MESSAGE_LEN + 1);
-    if (msg->message == NULL) {
-        ESP_LOGE(TAG, "Unable to allocate heap for telemetry structure"); 
-        free(msg->topic);
-        free(msg);
-        return NULL;
-    }
     ESP_LOGD(TAG, "Successfully created a new telemetry message. Heap left: %ul", esp_get_free_heap_size());
     return msg;
 }
@@ -66,10 +57,67 @@ void freeMessage(telemetry_message_t *msg)
 {
     if (msg != NULL) {
         ESP_LOGD(TAG, "About to free message.  Heap available: %ul", esp_get_free_heap_size());
-        free(msg->message);
-        free(msg->topic);
         free(msg);
         ESP_LOGD(TAG, "Freed memory.  Heap available: %ul", esp_get_free_heap_size());
+    }
+}
+
+int uptime(char *uptime_str, int max_chars)
+{
+    int days, hours, minutes, seconds;
+    unsigned long uptime_secs = clock_ms() / 1000;
+    days = uptime_secs / (60 * 60 * 24);
+    uptime_secs -= days * (60 * 60 * 24);
+    hours = uptime_secs / (60 * 60);
+    uptime_secs -= hours * (60 * 60);
+    minutes = uptime_secs / 60;
+    seconds = uptime_secs - (minutes * 60);
+    return snprintf(uptime_str, max_chars, "%d:%02d:%02d:%02d", days, hours, minutes, seconds);
+}
+ 
+
+void parse_command(char *command) {
+    /* Parse the payload for key value pairs */
+    key_value_pair *kv = parse_kv(command);
+    key_value_pair *root = kv;
+    char *cmd, *key, *value;
+    /* Just print them out for the moment... */
+    while (kv->next) {
+        kv = kv->next;
+        ESP_LOGI(TAG, "%s: %s", kv->key, kv->value);
+    }
+    /* First attempt at sending a command through mqtt */
+    cmd = get_value(root, "cmd");
+    if (*cmd != '/0') {
+        ESP_LOGD(TAG, "Command: '%s'", cmd);
+        /* Check for mode change */
+        if (strcmp(cmd, "mode") == 0) {
+            value = get_value(root, "mode");
+            ESP_LOGI(TAG, "Setting clock display mode to %s", value);
+            request_display_mode = atoi(value);
+        }
+        /* Check for firmware upgrade */
+        if (strcmp(cmd, "upgrade") == 0) {
+            char *firmware_url = get_value(root, "url");
+            /* Check to see we have all we need for the upgrade */
+            if (*firmware_url == '/0') {
+                ESP_LOGE(TAG, "Received mqtt upgrade request without url");
+            } else {
+                /* We can start the upgrade */
+                ESP_LOGI(TAG, "Starting OTA upgrade from: %s", firmware_url);
+                ota_error_t err;
+                err = ota_update(firmware_url);
+                if (err != OTA_OK) {
+                    ESP_LOGE(TAG, "Error performing OTA upgrade - Not upgraded");
+                } else {
+                    /* OTA upgrade was successful */
+                    ESP_LOGI(TAG, "OTA upgrade successful. Prepare to restart system!");
+                    esp_restart();
+                }
+            }
+        }
+    } else {
+        ESP_LOGE(TAG, "Received mqtt data without a command");
     }
 }
 
@@ -112,6 +160,8 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             ESP_LOGI(TAG, "MQTT_EVENT_DATA");
             printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
             printf("DATA=%.*s\r\n", event->data_len, event->data);
+            send_telemetry("echo", event->data);
+            parse_command(event->data);
             break;
         case MQTT_EVENT_ERROR:
             /* An mqtt error occurred */
@@ -120,6 +170,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     }
     return ESP_OK;
 }
+
 
 static esp_mqtt_client_handle_t telemetry_init(void)
 {
@@ -179,6 +230,7 @@ void telemetry_task(void *pvParameters)
     esp_mqtt_client_handle_t client = telemetry_init();
 
     int msg_id;
+    char uptime_str[UPTIME_CHARS];
     telemetry_message_t *telemetry_message;
     char hb_msg[TELEMETRY_MAX_MESSAGE_LEN];
     unsigned long last_hb = 0;
@@ -208,7 +260,8 @@ void telemetry_task(void *pvParameters)
             /* Send heartbeat */
             if (clock_ms() > last_hb + HEARTBEAT_PERIOD_MS) {
                 last_hb = clock_ms();
-                sprintf(hb_msg, "uptime %0.3f\nversion %d", (clock_ms() / 1000.0), VERSION);
+                uptime(uptime_str, UPTIME_CHARS);
+                sprintf(hb_msg, "uptime %s\nversion %d", uptime_str, VERSION);
                 send_telemetry("heartbeat", hb_msg);
             }
         } else {
