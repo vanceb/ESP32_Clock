@@ -181,7 +181,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             rx_msg[event->data_len] = '\0';
             printf("TOPIC=%s\r\n", rx_topic);
             printf("DATA=%s\r\n", rx_msg);
-            //send_telemetry("echo", rx_msg);
+            send_telemetry("echo", rx_msg);
             parse_command(rx_msg);
             break;
         case MQTT_EVENT_ERROR:
@@ -268,7 +268,7 @@ void telemetry_task(void *pvParameters)
 
     int msg_id;
     char uptime_str[UPTIME_CHARS];
-    telemetry_message_t *telemetry_message = newMessage();
+    telemetry_message_t *telemetry_message;
     char hb_msg[TELEMETRY_MAX_MESSAGE_LEN];
     unsigned long last_hb = 0;
     EventBits_t bits;
