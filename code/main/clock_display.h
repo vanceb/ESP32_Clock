@@ -10,13 +10,35 @@ This contains the following functionality:
 
 */
 
-extern void ledStrandSetup(void);
-extern void blink_task(void *pvParameter);
-extern void clock_display_task(void *pvParameter);
-
 #define LEDS_GPIO 21
 #define BLINK_GPIO_1 15
 #define BLINK_GPIO_2 13
 #define NUM_PIXELS 29
+
+extern void ledStrandSetup(void);
+extern void displayWifi(int state);
+extern void blink_task(void *pvParameter);
+extern void clock_display_task(void *pvParameter);
+
+enum wifi_state {
+    OFF,
+    DOWN,
+    UP,
+    AP
+};
+
+extern rgb wifi_colors[4];
+extern int wifi_status;
+
+// Define colors
+#define RED { 255, 0, 0 };
+#define GREEN { 0, 255, 0 };
+#define BLUE { 0, 0, 255 };
+#define MAGENTA { 255, 0, 255 };
+#define YELLOW { 255, 255, 0 };
+#define CYAN { 0, 255, 255 };
+#define BLACK { 0, 0, 0 };
+#define WHITE { 255, 255, 255 };
+
 
 #endif

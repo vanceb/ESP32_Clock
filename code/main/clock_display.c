@@ -13,6 +13,9 @@
 // Set the tag for logging
 static const char *TAG = "clock_display";
 
+// Externs defined
+rgb wifi_colors[4];
+
 // Global setup for the LEDs
 strand_t STRANDS[] = {
     {
@@ -30,7 +33,25 @@ int STRANDCNT = sizeof(STRANDS)/sizeof(STRANDS[0]);
 
 /* External Global Variables */
 rgb request_color = {0,0,0};
-int request_display_mode=1;
+int request_display_mode=0;
+int wifi_status = OFF;
+
+
+/* Create a color from components logarithmically 
+ * Values of r, g, and b specify the shift and so 
+ * the colors are 2 ^ r. etc
+ */
+rgb log_color(int r, int g, int b)
+{
+    rgb c;
+    r = r>7 ? 7 : r;
+    g = g>7 ? 7 : g;
+    b = b>7 ? 7 : b;
+    c.r = r == 0 ? 0 : 1 << r;
+    c.g = g == 0 ? 0 : 1 << g;
+    c.b = b == 0 ? 0 : 1 << b;
+    return c;
+}
 
 /* Convenience function to set up the LED strands
 */
@@ -53,36 +74,13 @@ void ledStrandSetup(void) {
         ESP_LOGE(TAG, "LED Strand Init Failure:  Halting...");
         while(true) {};
     }
+
+    wifi_colors[0] = log_color( 5, 0, 0 );
+    wifi_colors[1] = log_color( 5, 5, 0 );
+    wifi_colors[2] = log_color( 0, 5, 0 );
+    wifi_colors[3] = log_color( 0, 0, 5 );
+
     ESP_LOGD(TAG, "Initialised strands");
-}
-
-
-/* Blink the LEDs on the reverse of the board alternately */
-void blink_task(void *pvParameter)
-{
-    /* Configure the IOMUX register for pad BLINK_GPIO (some pads are
-       muxed to GPIO on reset already, but some default to other
-       functions and need to be switched to GPIO. Consult the
-       Technical Reference for a list of pads and their default
-       functions.)
-    */
-    //ESP_LOGD(TAG, "Starting blink task");
-    gpio_pad_select_gpio(BLINK_GPIO_1);
-    gpio_pad_select_gpio(BLINK_GPIO_2);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(BLINK_GPIO_1, GPIO_MODE_OUTPUT);
-    gpio_set_direction(BLINK_GPIO_2, GPIO_MODE_OUTPUT);
-    while(1) {
-        ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
-        /* Blink off (output low) */
-        gpio_set_level(BLINK_GPIO_1, 0);
-        gpio_set_level(BLINK_GPIO_2, 1);
-        delay(1000);
-        /* Blink on (output high) */
-        gpio_set_level(BLINK_GPIO_1, 1);
-        gpio_set_level(BLINK_GPIO_2, 0);
-        delay(1000);
-    }
 }
 
 /* Mix two rgb colors */
@@ -153,22 +151,6 @@ rgb log_fade(rgb color, unsigned int quotient, unsigned int divisor)
     return color;
 }
 
-/* Create a color from components logarithmically 
- * Valkues of r, g, and b specify the shift and so 
- * the colors are 2 ^ r. etc
- */
-rgb log_color(int r, int g, int b)
-{
-    rgb c;
-    r = r>7 ? 7 : r;
-    g = g>7 ? 7 : g;
-    b = b>7 ? 7 : b;
-    c.r = r == 0 ? 0 : 1 << r;
-    c.g = g == 0 ? 0 : 1 << g;
-    c.b = b == 0 ? 0 : 1 << b;
-    return c;
-}
-
 /* Turn on all LEDs to a apecific color */
 void all(rgb *leds, rgb color)
 {
@@ -182,6 +164,52 @@ void all(rgb *leds, rgb color)
 void reset_leds(rgb *leds) {
     rgb off = {0,0,0};
     all(leds, off);
+}
+
+/* Blink the LEDs on the reverse of the board alternately */
+void blink_task(void *pvParameter)
+{
+    /* Configure the IOMUX register for pad BLINK_GPIO (some pads are
+       muxed to GPIO on reset already, but some default to other
+       functions and need to be switched to GPIO. Consult the
+       Technical Reference for a list of pads and their default
+       functions.)
+    */
+    //ESP_LOGD(TAG, "Starting blink task");
+    gpio_pad_select_gpio(BLINK_GPIO_1);
+    gpio_pad_select_gpio(BLINK_GPIO_2);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(BLINK_GPIO_1, GPIO_MODE_OUTPUT);
+    gpio_set_direction(BLINK_GPIO_2, GPIO_MODE_OUTPUT);
+    while(1) {
+        ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+        /* Blink off (output low) */
+        gpio_set_level(BLINK_GPIO_1, 0);
+        gpio_set_level(BLINK_GPIO_2, 1);
+        delay(1000);
+        /* Blink on (output high) */
+        gpio_set_level(BLINK_GPIO_1, 1);
+        gpio_set_level(BLINK_GPIO_2, 0);
+        delay(1000);
+    }
+}
+
+/* Create a wifi icon of a specified color */
+void wifi_icon(rgb *leds) {
+    rgb color = wifi_colors[wifi_status];
+
+    reset_leds(leds);
+    int i;
+    uint8_t wifi_icon[] = {1,
+                       1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+                       1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+                       0, 0, 0, 0
+                       }; 
+    for (i=0; i<NUM_PIXELS; i++) {
+        if (wifi_icon[i]) {
+            leds[i] = color;
+        }
+    }
 }
 
 /* Create a smiley of a specified color */
@@ -247,11 +275,6 @@ void display_clock_simple(rgb *leds)
     struct tm timeinfo;
     time(&now);
     localtime_r(&now, &timeinfo);
-    // Is time set? If not, tm_year will be (1970 - 1900).
-    if (timeinfo.tm_year < (2016 - 1900)) {
-        ESP_LOGE(TAG, "Time is not set, not displaying clock");
-        return;
-    }
     int hour = timeinfo.tm_hour;
     int minute = timeinfo.tm_min;
     int second = timeinfo.tm_sec;
@@ -266,10 +289,20 @@ void display_clock_simple(rgb *leds)
     reset_leds(leds);
 
     /* Markers */
+    if ( wifi_status != UP )
+        Marker_Color = wifi_colors[wifi_status];
+
     leds[0] = Marker_Color;
     for (i=0; i<4; i++) {
         leds[25+i] = Marker_Color;
     }
+
+    // Is time set? If not, tm_year will be (1970 - 1900).
+    if (timeinfo.tm_year < (2016 - 1900)) {
+        ESP_LOGE(TAG, "Time is not set, not displaying clock");
+        return;
+    }
+    
     /* Hour */
     leds[((hour)%12)+1] = Hour_Color;
     /* Minute */
@@ -307,10 +340,14 @@ void display_clock_fade(rgb *leds)
     reset_leds(leds);
 
     /* Markers */
+    if ( wifi_status != UP )
+        Marker_Color = wifi_colors[wifi_status];
+
     leds[0] = Marker_Color;
     for (i=0; i<4; i++) {
         leds[25+i] = Marker_Color;
     }
+
     /* Hour - on the inner ring */
     leds[((hour)%12)+1] = log_fade(Hour_Color, 60 - minute, 60);
     leds[((hour+1)%12)+1] = log_fade(Hour_Color, minute, 60);
@@ -384,7 +421,8 @@ void clock_display_task(void *pvParameter)
         }
         switch (display) {
             case 0:
-                /* Go round again until we pick a valid option */
+                wifi_icon(leds);
+                delay ( 500 );
                 break;
             case 1:
                 display_clock_fade(leds);

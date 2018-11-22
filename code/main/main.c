@@ -88,12 +88,14 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        wifi_status = UP;
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
            auto-reassociate. */
         esp_wifi_connect();
         xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+        wifi_status = DOWN;
         break;
     default:
         break;
@@ -221,6 +223,10 @@ void app_main()
     /* Scan I2C */
     i2cscanner(22, 23);
 
+    // Initialise the LED Strands
+    ledStrandSetup();
+    xTaskCreate(&clock_display_task, "display_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+
     // Setup wifi
     initialise_wifi();
 
@@ -245,11 +251,10 @@ void app_main()
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI(TAG, "The current date/time in UK is: %s", strftime_buf);
 
-    // Initialise the LED Strands
-    ledStrandSetup();
+    // Time is now set, so change display to clock mode 
+    request_display_mode = 1;
 
     // Create long-running tasks
     xTaskCreatePinnedToCore(&telemetry_task, "telemetry_task", 9216, NULL, 5, NULL, 1);
     xTaskCreate(&blink_task, "blink_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-    xTaskCreate(&clock_display_task, "display_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }
