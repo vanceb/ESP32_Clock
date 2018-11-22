@@ -75,10 +75,10 @@ void ledStrandSetup(void) {
         while(true) {};
     }
 
-    wifi_colors[0] = log_color( 5, 0, 0 );
-    wifi_colors[1] = log_color( 5, 5, 0 );
-    wifi_colors[2] = log_color( 0, 5, 0 );
-    wifi_colors[3] = log_color( 0, 0, 5 );
+    wifi_colors[0] = log_color( 7, 0, 0 );
+    wifi_colors[1] = log_color( 7, 7, 0 );
+    wifi_colors[2] = log_color( 0, 7, 0 );
+    wifi_colors[3] = log_color( 0, 0, 7 );
 
     ESP_LOGD(TAG, "Initialised strands");
 }
@@ -280,10 +280,10 @@ void display_clock_simple(rgb *leds)
     int second = timeinfo.tm_sec;
 
     /* Display the clock (Simple) */
-    rgb Marker_Color = {2,2,2};
-    rgb Hour_Color = {32,0,0};
-    rgb Minute_Color = {0,0,32};
-    rgb Second_Color = {0,32,0};
+    rgb Marker_Color = log_color ( 2, 2, 2 );
+    rgb Hour_Color = log_color ( 7, 0, 0 );
+    rgb Minute_Color = log_color ( 0, 0, 7 );
+    rgb Second_Color = log_color ( 0, 7, 0 );
 
     /* Clear frame buffer */
     reset_leds(leds);
@@ -331,10 +331,11 @@ void display_clock_fade(rgb *leds)
     int second = timeinfo.tm_sec;
 
     /* Set the clock colours */
-    rgb Marker_Color = log_color(1,1,1);
-    rgb Hour_Color = log_color(5,0,0);
-    rgb Minute_Color = log_color(0,0,5);
-    rgb Second_Color = log_color(0,5,0);
+    /* Display the clock (Simple) */
+    rgb Marker_Color = log_color ( 2, 2, 2 );
+    rgb Hour_Color = log_color ( 7, 0, 0 );
+    rgb Minute_Color = log_color ( 0, 0, 7 );
+    rgb Second_Color = log_color ( 0, 7, 0 );
 
     /* Clear frame buffer */
     reset_leds(leds);
@@ -390,6 +391,22 @@ rgb log_color_random()
         c.b = 1 << ((uint8_t)esp_random() & 0x07);
     }
     return c;
+}
+
+void brightness ( rgb *leds, uint8_t brightness )
+{
+    int i;
+    /* Limit brightness */
+    brightness = brightness > 7 ? 7 : brightness;
+    /* Invert brightness for scaling */
+    brightness = 7 - brightness;
+    
+    for ( i=0; i<NUM_PIXELS; i++ ) 
+    {
+        leds[i].r = leds[i].r == 0 ? 0 : ( leds[i].r > ( 1 << brightness ) ? leds[i].r >> brightness : 1);
+        leds[i].g = leds[i].g == 0 ? 0 : ( leds[i].g > ( 1 << brightness ) ? leds[i].g >> brightness : 1);
+        leds[i].b = leds[i].b == 0 ? 0 : ( leds[i].b > ( 1 << brightness ) ? leds[i].b >> brightness : 1);
+    }
 }
 
 /* Main task that controls the display */
@@ -453,6 +470,7 @@ void clock_display_task(void *pvParameter)
                 break;
         }
         /* Update the display */
+        brightness ( leds, 5 );
         for (i=0; i<strand->numPixels; i++) {
             strand->pixels[i] = pixelFromRGB(leds[i].r, leds[i].g, leds[i].b);
         }
