@@ -23,7 +23,7 @@
 #include "main.h"
 #include "telemetry.h"
 #include "secrets.h"
-#include "keyvalue.h"
+#include "kv.h"
 #include "ota.h"
 
 #define UPTIME_CHARS 16 // The length of the uptime string in characters
@@ -76,31 +76,32 @@ int uptime(char *uptime_str, int max_chars)
 }
  
 
-void parse_command(char *command) {
+void parse_command(char *buffer) {
+
     /* Parse the payload for key value pairs */
-    key_value_pair *kv = parse_kv(command);
-    key_value_pair *root = kv;
-    char *cmd, *key, *value;
+    kv *root = parseKv(buffer);
+    kv *cursor = root;
     /* Just print them out for the moment... */
-    while (kv->next) {
-        kv = kv->next;
-        ESP_LOGI(TAG, "%s: %s", kv->key, kv->value);
+    while (cursor) {
+        ESP_LOGI(TAG, "\"%s\": \"%s\"", cursor->key, cursor->value);
+        cursor = cursor -> pNext;
     }
     /* First attempt at sending a command through mqtt */
-    cmd = get_value(root, "cmd");
-    if (*cmd != '/0') {
-        ESP_LOGD(TAG, "Command: '%s'", cmd);
+    char *command = getValue(root, "cmd");
+    char *value = NULL;
+    if ( ( command != NULL ) && ( *command != '\0' ) ) {
+        ESP_LOGD(TAG, "Command: '%s'", command);
         /* Check for mode change */
-        if (strcmp(cmd, "mode") == 0) {
-            value = get_value(root, "mode");
+        if (strcmp(command, "mode") == 0) {
+            value = getValue(root, "mode");
             ESP_LOGI(TAG, "Setting clock display mode to %s", value);
             request_display_mode = atoi(value);
         }
         /* Check for firmware upgrade */
-        if (strcmp(cmd, "upgrade") == 0) {
-            char *firmware_url = get_value(root, "url");
+        if (strcmp(command, "upgrade") == 0) {
+            char *firmware_url = getValue(root, "url");
             /* Check to see we have all we need for the upgrade */
-            if (*firmware_url == '/0') {
+            if (firmware_url == NULL || *firmware_url == '\0') {
                 ESP_LOGE(TAG, "Received mqtt upgrade request without url");
             } else {
                 /* We can start the upgrade */
@@ -119,6 +120,7 @@ void parse_command(char *command) {
     } else {
         ESP_LOGE(TAG, "Received mqtt data without a command");
     }
+
 }
 
 

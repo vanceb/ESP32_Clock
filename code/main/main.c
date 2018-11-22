@@ -58,6 +58,9 @@
 
 #include "secrets.h"
 
+/* Pick wifi for hackspace or home */
+#define HOME 1
+
 static const char *TAG = "esp32clock";
 
 EventGroupHandle_t wifi_event_group;
@@ -108,10 +111,13 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     wifi_config_t wifi_config = {
         .sta = {
-            //.ssid = WIFI_SSID,  // Defined in secrets.h
-            //.password = WIFI_PASSWD,  // Defined in secrets.h
+#if HOME
+            .ssid = WIFI_SSID,  // Defined in secrets.h
+            .password = WIFI_PASSWD,  // Defined in secrets.h
+#else
             .ssid = RLAB_WIFI_SSID,
             .password = RLAB_WIFI_PASSWD,
+#endif
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
