@@ -470,7 +470,7 @@ void clock_display_task(void *pvParameter)
                 break;
         }
         /* Update the display */
-        brightness ( leds, 5 );
+        brightness ( leds, 7 );
         for (i=0; i<strand->numPixels; i++) {
             strand->pixels[i] = pixelFromRGB(leds[i].r, leds[i].g, leds[i].b);
         }

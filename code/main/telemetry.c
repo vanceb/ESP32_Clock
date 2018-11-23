@@ -81,11 +81,12 @@ void parse_command(char *buffer) {
     /* Parse the payload for key value pairs */
     kv *root = parseKv(buffer);
     kv *cursor = root;
+
     /* Just print them out for the moment... */
-    while (cursor) {
-        ESP_LOGI(TAG, "\"%s\": \"%s\"", cursor->key, cursor->value);
-        cursor = cursor -> pNext;
-    }
+    char serialise[1024]; // Buffer to hold serialised output
+    serialiseKv ( root, serialise, 1024 );
+    ESP_LOGD ( TAG, "Parsed KV\n%s", serialise );
+
     /* First attempt at sending a command through mqtt */
     char *command = getValue(root, "cmd");
     char *value = NULL;

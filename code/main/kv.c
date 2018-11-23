@@ -88,6 +88,11 @@ int parseSingleKv (
         (*pBuffer)++;
     }
 
+    /* Check for end of buffer */
+    if ( **pBuffer == '\0' ) {
+        return 0;
+    }
+
     /* Get key */
     
     /* Set the start of the key in the buffer */
@@ -160,8 +165,6 @@ int parseSingleKv (
     {
         /* We have removed some whitespace */
         *cursor = '\0';
-    } else {
-        ESP_LOGD(TAG, "No Trailing Space!!!!!");
     }
 
     /* If end of line then mark the end of the value
@@ -203,6 +206,33 @@ kv *parseKv (
     return pRoot;
 }
 
+
+int serialiseKv(
+    kv *pKv,
+    char *pBuffer,
+    size_t bufferLen
+)
+{
+    char *cursor = pBuffer;
+    size_t charsLeft = bufferLen;
+    *pBuffer = '\0';
+
+    while ( pKv )
+    {
+        strncat ( pBuffer, pKv -> key, charsLeft );
+        charsLeft = bufferLen - strlen(pBuffer) - 1;
+        strncat ( pBuffer, " ", charsLeft);
+        charsLeft--;
+
+        strncat ( pBuffer, pKv -> value, charsLeft );
+        charsLeft = bufferLen - strlen(pBuffer) - 1;
+        strncat ( pBuffer, "\n", charsLeft );
+        charsLeft--;
+        
+        pKv = pKv -> pNext;
+    }
+    return 0;
+}
 
 void freeKv (
     kv *pKv

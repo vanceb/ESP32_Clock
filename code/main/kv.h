@@ -64,6 +64,21 @@ kv *parseKv (
     char *buffer
 );
 
+/*
+ * Serialise a linked list of key-value pairs into a string
+ * 
+ * kv - linked list of key-value pairs
+ * pBuffer - contains serialised result
+ * 
+ * Results of this serialisation should parse with parseKv
+ * without error
+ */
+
+int serialiseKv(
+    kv *pKv,
+    char *pBuffer,
+    size_t bufferLen
+);
 
 /*
  * Free all key-value pairs in a linked list
