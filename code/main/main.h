@@ -18,14 +18,6 @@
 #define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
 
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
-extern EventGroupHandle_t wifi_event_group;
-
-/* The event group allows multiple bits for each event,
-   but we only care about one event - are we connected
-   to the AP with an IP? */
-extern const int CONNECTED_BIT;
-
 /* Display modes */
 extern int displayMode;
 

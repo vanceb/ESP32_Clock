@@ -50,6 +50,10 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
+/* Needed for wifimanager */
+#include "http_svr.h"
+#include "wifi_manager.h"
+
 // Project local code
 #include "main.h"
 //#include "clock_control.h"
@@ -58,13 +62,10 @@
 
 #include "secrets.h"
 
-/* Pick wifi for hackspace or home */
-#define HOME 1
-
 static const char *TAG = "esp32clock";
 
-EventGroupHandle_t wifi_event_group;
-const int CONNECTED_BIT = BIT0;
+static TaskHandle_t task_http_server = NULL;
+static TaskHandle_t task_wifi_manager = NULL;
 
 // Arduino-like functions to ease readability
 uint32_t IRAM_ATTR millis()
@@ -77,55 +78,6 @@ void delay(uint32_t ms)
   if (ms > 0) {
     vTaskDelay(ms / portTICK_PERIOD_MS);
   }
-}
-
-// Wifi setup and management
-static esp_err_t event_handler(void *ctx, system_event_t *event)
-{
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-        esp_wifi_connect();
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-        wifi_status = UP;
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        /* This is a workaround as ESP32 WiFi libs don't currently
-           auto-reassociate. */
-        esp_wifi_connect();
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
-        wifi_status = DOWN;
-        break;
-    default:
-        break;
-    }
-    return ESP_OK;
-}
-
-static void initialise_wifi(void)
-{
-    tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-    wifi_config_t wifi_config = {
-        .sta = {
-#if HOME
-            .ssid = WIFI_SSID,  // Defined in secrets.h
-            .password = WIFI_PASSWD,  // Defined in secrets.h
-#else
-            .ssid = RLAB_WIFI_SSID,
-            .password = RLAB_WIFI_PASSWD,
-#endif
-        },
-    };
-    ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
-    ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
 void i2cscanner(int sda_pin, int scl_pin) {
@@ -188,7 +140,7 @@ static void initialize_sntp(void)
 
 static void obtain_time(void)
 {
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
+    xEventGroupWaitBits(wifi_manager_event_group, WIFI_MANAGER_WIFI_CONNECTED_BIT,
                         false, true, portMAX_DELAY);
     initialize_sntp();
 
@@ -228,7 +180,19 @@ void app_main()
     xTaskCreate(&clock_display_task, "display_task", 3*configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 
     // Setup wifi
-    initialise_wifi();
+    /* disable the default wifi logging */
+	esp_log_level_set("wifi", ESP_LOG_NONE);
+
+	/* initialize flash memory */
+	nvs_flash_init();
+
+	/* start the wifi manager task */
+	xTaskCreate(&wifi_manager, "wifi_manager", 4096, NULL, 4, &task_wifi_manager);
+
+	/* start the HTTP Server task */
+	xTaskCreate(&http_svr, "http_server", 2048, NULL, 5, &task_http_server);
+
+
 
     /* Deal with the time */
     time_t now;

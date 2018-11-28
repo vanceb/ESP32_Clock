@@ -29,7 +29,8 @@
 #define UPTIME_CHARS 16 // The length of the uptime string in characters
 
 static const char *TAG = "telemetry";
-const int MQTT_CONNECTED_BIT = BIT1;
+EventGroupHandle_t mqtt_event_group = NULL;
+const int MQTT_CONNECTED_BIT = BIT0;
 
 extern const uint8_t letsencrypt_x3_pem_start[] asm("_binary_letsencrypt_x3_pem_start");
 extern const uint8_t letsencrypt_x3_pem_end[]   asm("_binary_letsencrypt_x3_pem_end");
@@ -136,7 +137,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     // your_context_t *context = event->context;
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
-            xEventGroupSetBits(wifi_event_group, MQTT_CONNECTED_BIT);
+            xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_BIT);
             ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
             /* Subscribe to topics here */
             strcpy(sub_topic, base_topic);
@@ -145,7 +146,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
             break;
         case MQTT_EVENT_DISCONNECTED:
-            xEventGroupClearBits(wifi_event_group, MQTT_CONNECTED_BIT);
+            xEventGroupClearBits(mqtt_event_group, MQTT_CONNECTED_BIT);
             ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
             break;
 
@@ -198,6 +199,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 
 static esp_mqtt_client_handle_t telemetry_init(void)
 {
+    /* Create the event group for signalling state */
+    mqtt_event_group = xEventGroupCreate();
+
     ESP_LOGI(TAG, "Starting mqtt telemetry...");
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = MQTT_URL,  // Defined in secrets.h
@@ -283,7 +287,7 @@ void telemetry_task(void *pvParameters)
     ESP_LOGI(TAG, "Starting the telemetry transmit loop...");
     /* mqtt transmit processing loop */
     for(;;) {
-        bits = xEventGroupWaitBits(wifi_event_group, MQTT_CONNECTED_BIT,
+        bits = xEventGroupWaitBits(mqtt_event_group, MQTT_CONNECTED_BIT,
                             false, true, 0);
         if (bits & MQTT_CONNECTED_BIT){
             /* We are connected to mqtt broker */

@@ -28,6 +28,8 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
+#include "wifi_manager.h"
+
 static const char *TAG = "OTA Upgrade";
 /*an ota data write buffer ready to write to the flash*/
 static char ota_write_data[BUFFSIZE + 1] = { 0 };
@@ -82,7 +84,7 @@ int ota_update(char *firmware_url)
     /* Wait for the callback to set the CONNECTED_BIT in the
        event group.
     */
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
+    xEventGroupWaitBits(wifi_manager_event_group, WIFI_MANAGER_WIFI_CONNECTED_BIT,
                         false, true, portMAX_DELAY);
     ESP_LOGI(TAG, "Start to connect to upgrade server....");
     

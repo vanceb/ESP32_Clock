@@ -36,7 +36,8 @@
                 "/Users/vance/esp/esp-idf/components/bootloader_support/include",
                 "/Users/vance/esp/esp-idf/components/nghttp/port/include",
                 "${workspaceFolder}/components/esp32_digital_led_lib/include",
-                "${workspaceFolder}/build/include"
+                "${workspaceFolder}/build/include",
+                "${workspaceFolder}/components/wifi_manager/include"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
