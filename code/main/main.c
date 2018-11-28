@@ -179,11 +179,11 @@ void app_main()
     /* disable the default wifi logging */
 	esp_log_level_set("wifi", ESP_LOG_NONE);
 
-	/* start the wifi manager task */
-	xTaskCreate(&wifi_manager, "wifi_manager", 4096, NULL, 4, &task_wifi_manager);
-
 	/* start the HTTP Server task */
 	xTaskCreate(&http_svr, "http_server", 2048, NULL, 5, &task_http_server);
+
+	/* start the wifi manager task */
+	xTaskCreate(&wifi_manager, "wifi_manager", 4096, NULL, 4, &task_wifi_manager);
 
     /* Telemetry task for MQTT communication */
     xTaskCreatePinnedToCore(&telemetry_task, "telemetry_task", 9216, NULL, 5, NULL, 1);

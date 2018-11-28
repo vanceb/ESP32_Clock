@@ -213,7 +213,7 @@ rgb statusColor()
 
         } else {
             /* MQTT is not connected */
-            return log_color( 2, 2, 0 );
+            return log_color( 2, 0, 2 );
 
         }
     } else {

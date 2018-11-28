@@ -53,6 +53,7 @@ Contains the freeRTOS task and all necessary support
 #include "wifi_manager.h"
 
 
+static const char *TAG = "wifi_manager";
 
 
 SemaphoreHandle_t wifi_manager_json_mutex = NULL;
@@ -457,6 +458,7 @@ void wifi_manager_filter_unique( wifi_ap_record_t * aplist, uint16_t * aps) {
 void wifi_manager( void * pvParameters ){
 
 	/* memory allocation of objects used by the task */
+	esp_err_t err;
 	wifi_manager_json_mutex = xSemaphoreCreateMutex();
 	accessp_records = (wifi_ap_record_t*)malloc(sizeof(wifi_ap_record_t) * MAX_AP_NUM);
 	accessp_json = (char*)malloc(MAX_AP_NUM * JSON_ONE_APP_SIZE + 4); /* 4 bytes for json encapsulation of "[\n" and "]\0" */
@@ -687,20 +689,24 @@ void wifi_manager( void * pvParameters ){
 		else if(uxBits & WIFI_MANAGER_REQUEST_WIFI_SCAN){
                         ap_num = MAX_AP_NUM;
 
-			ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
-			ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, accessp_records));
+//			ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
+			err = esp_wifi_scan_start(&scan_config, true); 
+			if ( err == ESP_OK || err == ESP_ERR_WIFI_TIMEOUT ) {
+				ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, accessp_records));
 
-			/* make sure the http server isn't trying to access the list while it gets refreshed */
-			if(wifi_manager_lock_json_buffer( ( TickType_t ) 20 )){
-				/* Will remove the duplicate SSIDs from the list and update ap_num */
-				wifi_manager_filter_unique(accessp_records, &ap_num);
-				wifi_manager_generate_acess_points_json();
-				wifi_manager_unlock_json_buffer();
-			}
-			else{
-#if WIFI_MANAGER_DEBUG
-				printf("wifi_manager: could not get access to json mutex in wifi_scan\n");
-#endif
+				/* make sure the http server isn't trying to access the list while it gets refreshed */
+				if(wifi_manager_lock_json_buffer( ( TickType_t ) 20 )){
+					/* Will remove the duplicate SSIDs from the list and update ap_num */
+					wifi_manager_filter_unique(accessp_records, &ap_num);
+					wifi_manager_generate_acess_points_json();
+					wifi_manager_unlock_json_buffer();
+				} else {
+	#if WIFI_MANAGER_DEBUG
+					printf("wifi_manager: could not get access to json mutex in wifi_scan\n");
+	#endif
+				}
+			} else {
+				ESP_LOGW(TAG, "Wifi scan error!" );
 			}
 
 			/* finally: release the scan request bit */
