@@ -30,7 +30,6 @@
 
 static const char *TAG = "telemetry";
 EventGroupHandle_t mqtt_event_group = NULL;
-const int MQTT_CONNECTED_BIT = BIT0;
 
 extern const uint8_t letsencrypt_x3_pem_start[] asm("_binary_letsencrypt_x3_pem_start");
 extern const uint8_t letsencrypt_x3_pem_end[]   asm("_binary_letsencrypt_x3_pem_end");

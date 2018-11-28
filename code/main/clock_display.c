@@ -1,14 +1,19 @@
 #include <time.h>
 #include <sys/time.h>
 
+// ESP IDF Libraries
+#include "esp_log.h"
+#include "esp_wifi.h"
+
 #include "main.h"
 #include "clock_display.h"
-
-// ESP IDL Libraries
-#include "esp_log.h"
+#include "telemetry.h"
 
 // Neopixel library
 #include "esp32_digital_led_lib.h"
+
+/* Wifi manager for wifi status */
+#include "wifi_manager.h"
 
 // Set the tag for logging
 static const char *TAG = "clock_display";
@@ -34,7 +39,6 @@ int STRANDCNT = sizeof(STRANDS)/sizeof(STRANDS[0]);
 /* External Global Variables */
 rgb request_color = {0,0,0};
 int request_display_mode=0;
-int wifi_status = OFF;
 
 
 /* Create a color from components logarithmically 
@@ -194,9 +198,34 @@ void blink_task(void *pvParameter)
     }
 }
 
+rgb statusColor()
+{
+    EventBits_t uxBits;
+    uxBits = xEventGroupGetBits ( wifi_manager_event_group );
+
+    if ( uxBits & WIFI_MANAGER_WIFI_CONNECTED_BIT ) {
+        /* Wifi is connected */
+        uxBits = xEventGroupGetBits ( mqtt_event_group );
+
+        if ( uxBits & MQTT_CONNECTED_BIT ) {
+            /* MQTT is connected */
+            return log_color( 2, 2, 2 );
+
+        } else {
+            /* MQTT is not connected */
+            return log_color( 2, 2, 0 );
+
+        }
+    } else {
+        /* Wifi is not connected */
+        return log_color( 2, 0, 0 );
+
+    }
+}
+
 /* Create a wifi icon of a specified color */
 void wifi_icon(rgb *leds) {
-    rgb color = wifi_colors[wifi_status];
+    rgb color = statusColor();
 
     reset_leds(leds);
     int i;
@@ -289,8 +318,7 @@ void display_clock_simple(rgb *leds)
     reset_leds(leds);
 
     /* Markers */
-    if ( wifi_status != UP )
-        Marker_Color = wifi_colors[wifi_status];
+    Marker_Color = statusColor();
 
     leds[0] = Marker_Color;
     for (i=0; i<4; i++) {
@@ -341,8 +369,7 @@ void display_clock_fade(rgb *leds)
     reset_leds(leds);
 
     /* Markers */
-    if ( wifi_status != UP )
-        Marker_Color = wifi_colors[wifi_status];
+    Marker_Color = statusColor();
 
     leds[0] = Marker_Color;
     for (i=0; i<4; i++) {

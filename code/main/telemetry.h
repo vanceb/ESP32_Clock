@@ -1,6 +1,8 @@
 #ifndef TELEMETRY_H
 #define TELEMETRY_H
 
+#include "freertos/queue.h"
+
 /* Define maximums */
 #define TELEMETRY_MAX_TOPIC_LEN 64
 #define TELEMETRY_MAX_MESSAGE_LEN 256
@@ -9,6 +11,10 @@
 #define RX_TELEMETRY_MAX_MESSAGE_LEN 256
 
 #define HEARTBEAT_PERIOD_MS 30000
+
+/* Event Group for mqtt status */
+extern EventGroupHandle_t mqtt_event_group;
+#define MQTT_CONNECTED_BIT BIT0
 
 /* Define a simple type for a telemetry message */
 typedef struct telemetry_message {

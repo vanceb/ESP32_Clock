@@ -20,16 +20,6 @@ extern void displayWifi(int state);
 extern void blink_task(void *pvParameter);
 extern void clock_display_task(void *pvParameter);
 
-enum wifi_state {
-    OFF,
-    DOWN,
-    UP,
-    AP
-};
-
-extern rgb wifi_colors[4];
-extern int wifi_status;
-
 // Define colors
 #define RED { 255, 0, 0 };
 #define GREEN { 0, 255, 0 };
