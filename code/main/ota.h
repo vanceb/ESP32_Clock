@@ -14,6 +14,6 @@ typedef enum ota_returncodes {
     OTA_ERROR
 } ota_error_t;
 
-int ota_update(char *firmware_url);
+int ota_update ( char *firmware_url );
 
 #endif
