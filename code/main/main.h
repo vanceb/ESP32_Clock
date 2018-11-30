@@ -1,10 +1,6 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <ctype.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-
 /* Some basic data */
 #define PROJECT "esp32clock"
 #define VERSION 1

@@ -1,6 +1,8 @@
 #ifndef TELEMETRY_H
 #define TELEMETRY_H
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
 #include "freertos/queue.h"
 
 /* Define maximums */
@@ -10,6 +12,7 @@
 #define RX_TELEMETRY_MAX_TOPIC_LEN 64
 #define RX_TELEMETRY_MAX_MESSAGE_LEN 256
 
+/* How long between heartbeat mqtt messages */
 #define HEARTBEAT_PERIOD_MS 30000
 
 /* Event Group for mqtt status */
@@ -19,8 +22,8 @@ extern EventGroupHandle_t mqtt_event_group;
 /* Define a simple type for a telemetry message */
 typedef struct telemetry_message {
     //char processed;
-    char topic[TELEMETRY_MAX_TOPIC_LEN];
-    char message[TELEMETRY_MAX_MESSAGE_LEN];
+    char topic [ TELEMETRY_MAX_TOPIC_LEN ];
+    char message [ TELEMETRY_MAX_MESSAGE_LEN ];
 } telemetry_message_t;
 
 /* Declare queue for transmit messages */
@@ -28,7 +31,7 @@ typedef struct telemetry_message {
 extern QueueHandle_t telemetry_tx_queue;
 
 /* Public functions */
-void telemetry_task(void *pvParameters);
-int send_telemetry(char *topic, char *message);
+void telemetry_task ( void *pvParameters );
+int send_telemetry ( char *topic, char *message );
 
 #endif
