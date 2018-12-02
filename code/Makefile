@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := aws_iot_subpub
+PROJECT_NAME := esp32-clock
 
 include $(IDF_PATH)/make/project.mk
 
