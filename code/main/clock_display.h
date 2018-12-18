@@ -15,6 +15,14 @@ This contains the following functionality:
 #define BLINK_GPIO_2 13
 #define NUM_PIXELS 29
 
+
+/* Brighness values for LEDs */
+#define MIN_BRIGHTNESS 0
+#define MAX_BRIGHTNESS 255
+/* Values for the ambient light sensor */
+#define MIN_AMBIENT 0
+#define MAX_AMBIENT 50
+
 extern void ledStrandSetup(void);
 extern void displayWifi(int state);
 extern void blink_task(void *pvParameter);

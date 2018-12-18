@@ -18,6 +18,8 @@
 #include "secrets.h"
 #include "kv.h"
 #include "ota.h"
+#include "APDS9960.h"
+#include "gesture.h"
 
 #define UPTIME_CHARS 16 // The length of the uptime string in characters
 
@@ -347,7 +349,7 @@ void telemetry_task ( void *pvParameters )
             if (clock_ms() > last_hb + HEARTBEAT_PERIOD_MS) {
                 last_hb = clock_ms();
                 uptime(uptime_str, UPTIME_CHARS);
-                sprintf(hb_msg, "uptime %s\nversion %d", uptime_str, VERSION);
+                sprintf(hb_msg, "uptime %s\nversion %d\nbrightness %d", uptime_str, VERSION, ambient_light);
                 send_telemetry("heartbeat", hb_msg);
             }
 

@@ -59,6 +59,7 @@
 //#include "clock_control.h"
 #include "telemetry.h"
 #include "clock_display.h"
+#include "gesture.h"
 
 #include "secrets.h"
 
@@ -173,11 +174,16 @@ void app_main()
     //rgb request_color = {0,0,0};
 
     /* Scan I2C */
-    i2cscanner(22, 23);
+    //i2cscanner(22, 23);
 
     // Setup wifi
     /* disable the default wifi logging */
 	esp_log_level_set("wifi", ESP_LOG_NONE);
+
+    /* Start the gesture and light sensor task */
+    xTaskCreate(&gestureTask, "gesture", 4096, NULL, 5, NULL);
+
+    vTaskDelay(100);
 
 	/* start the HTTP Server task */
 	xTaskCreate(&http_svr, "http_server", 2048, NULL, 5, &task_http_server);

@@ -8,6 +8,7 @@
 #include "main.h"
 #include "clock_display.h"
 #include "telemetry.h"
+#include "gesture.h"
 
 // Neopixel library
 #include "esp32_digital_led_lib.h"
@@ -420,7 +421,52 @@ rgb log_color_random()
     return c;
 }
 
+int map ( int value, int inLow, int inHigh, int outLow, int outHigh )
+{
+    int inRange = inHigh - inLow;
+    int outRange = outHigh - outLow;
+    float multiplier = (float) outRange / (float) inRange;
+    /* Check / reset Bounds */
+    value = value < inLow ? inLow : value;
+    value = value > inHigh ? inHigh : value;
+    /* map value and return */
+    return (int) ( ( (value - inLow) * multiplier ) + inLow );
+}
+
 void brightness ( rgb *leds, uint8_t brightness )
+{
+    static uint historic_brightness = 128;
+    int i;
+    uint8_t value;
+
+    /* Fade the brightness towards the new value */
+    if ( brightness < historic_brightness ) {
+        historic_brightness--;
+    } else if (brightness > historic_brightness ) {
+        historic_brightness++;
+    }
+    /* Limit brightness */
+    historic_brightness = historic_brightness < 1 ? 1 : historic_brightness;
+    historic_brightness = historic_brightness > MAX_BRIGHTNESS ? MAX_BRIGHTNESS : historic_brightness;
+    brightness = (uint8_t) historic_brightness;
+    ESP_LOGV(TAG, "Display brightness: %d", brightness);
+
+    /* Scaling factor */
+    float bright_pc = (float) brightness / (float) (MAX_BRIGHTNESS);
+    
+    /* Adjust the value of each pixel based on the brightness */
+    for ( i=0; i<NUM_PIXELS; i++ ) 
+    {
+        value = (uint8_t) leds[i].r * bright_pc;
+        leds[i].r = (leds[i].r != 0 && value == 0) ? 1 : value;
+        value = (uint8_t) leds[i].g * bright_pc;
+        leds[i].g = (leds[i].g != 0 && value == 0) ? 1 : value;
+        value = (uint8_t) leds[i].b * bright_pc;
+        leds[i].b = (leds[i].b != 0 && value == 0) ? 1 : value;
+    }
+}
+
+void log_brightness ( rgb *leds, uint8_t brightness )
 {
     int i;
     /* Limit brightness */
@@ -450,6 +496,8 @@ void clock_display_task(void *pvParameter)
     //int displayMode = request_display_mode;
 
     int display;
+
+    int bright;
 
     /* The main forever loop */
     for(;;) {
@@ -497,7 +545,10 @@ void clock_display_task(void *pvParameter)
                 break;
         }
         /* Update the display */
-        brightness ( leds, 7 );
+        bright = map (ambient_light, MIN_AMBIENT, MAX_AMBIENT, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+        ESP_LOGV(TAG, "Ambient: %d,  Display brightness: %d", ambient_light, bright);
+
+        brightness ( leds, bright );
         for (i=0; i<strand->numPixels; i++) {
             strand->pixels[i] = pixelFromRGB(leds[i].r, leds[i].g, leds[i].b);
         }
