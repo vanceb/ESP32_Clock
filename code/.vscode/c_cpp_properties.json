@@ -65,21 +65,10 @@
         {
             "name": "Linux",
             "includePath": [
-                "/usr/include",
-                "/usr/local/include",
-                "${workspaceFolder}"
+                "${workspaceFolder}/**",
+                "/opt/esp/esp-idf/components/**"
             ],
-            "defines": [],
-            "intelliSenseMode": "clang-x64",
-            "browse": {
-                "path": [
-                    "/usr/include",
-                    "/usr/local/include",
-                    "${workspaceFolder}"
-                ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
-            }
+            "defines": []
         },
         {
             "name": "Win32",

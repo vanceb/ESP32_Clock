@@ -1,6 +1,7 @@
 //#include <stdio.h>
 //#include <stdint.h>
 //#include <string.h>
+#include <time.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -63,7 +64,7 @@ void freeMessage ( telemetry_message_t *msg )
 int uptime ( char *uptime_str, int max_chars )
 {
     int days, hours, minutes, seconds;
-    unsigned long uptime_secs = clock_ms() / 1000;
+    int64_t uptime_secs = esp_timer_get_time() / 1000000;
     days = uptime_secs / ( 60 * 60 * 24 );
     uptime_secs -= days * ( 60 * 60 * 24 );
     hours = uptime_secs / ( 60 * 60 );
@@ -156,6 +157,10 @@ static esp_err_t mqtt_event_handler ( esp_mqtt_event_handle_t event )
 
     // your_context_t *context = event->context;
     switch ( event->event_id ) {
+
+        case MQTT_EVENT_BEFORE_CONNECT:
+
+            break;
 
         case MQTT_EVENT_CONNECTED:
      
@@ -305,11 +310,10 @@ BaseType_t send_telemetry ( char *topic, char *message )
 void sendQueuedTelemetry(esp_mqtt_client_handle_t client)
 {
     telemetry_message_t *telemetry_message;
-    ESP_LOGD ( TAG, "Messages in queue: %d", uxQueueMessagesWaiting ( telemetry_tx_queue ) );
+    ESP_LOGV ( TAG, "Messages in queue: %d", uxQueueMessagesWaiting ( telemetry_tx_queue ) );
 
     /* Check for and send queued mqtt messages */
-    /* This blocks for timeout if there is no message in the queue */
-    if ( xQueueReceive ( telemetry_tx_queue, & ( telemetry_message ), 15000 / portTICK_PERIOD_MS ) ) {
+    if ( xQueueReceive ( telemetry_tx_queue, & ( telemetry_message ), 1000 / portTICK_PERIOD_MS ) ) {
         /* We got a message from the queue so send it */
         ESP_LOGD ( TAG, "About to transmit telemetry...\nt: %s\nm: %s", 
                 telemetry_message->topic, telemetry_message->message);
@@ -329,8 +333,11 @@ void telemetry_task ( void *pvParameters )
 
     char uptime_str [ UPTIME_CHARS ];
     char hb_msg [ TELEMETRY_MAX_MESSAGE_LEN ];
-    unsigned long last_hb = 0;
     EventBits_t bits;
+    time_t now, next_hb;
+
+    /* Set next heartbeat to be now */
+    next_hb = time(NULL);
 
     /* Queue a startup messgae */
     send_telemetry ( "status", "Startup mqtt telemetry" );
@@ -338,22 +345,22 @@ void telemetry_task ( void *pvParameters )
     ESP_LOGI ( TAG, "Starting the telemetry transmit loop..." );
     /* mqtt transmit processing loop */
     for ( ;; ) {
-        
         bits = xEventGroupWaitBits ( mqtt_event_group, MQTT_CONNECTED_BIT, false, true, 0 );
 
         if ( bits & MQTT_CONNECTED_BIT ) {
             /* We are connected to mqtt broker */
             sendQueuedTelemetry(client);
 
+            now = time(NULL);
             /* Queue heartbeat message if it is time */
-            if (clock_ms() > last_hb + HEARTBEAT_PERIOD_MS) {
-                last_hb = clock_ms();
+            if (now > next_hb) {
+                next_hb = now + HEARTBEAT_PERIOD;
                 uptime(uptime_str, UPTIME_CHARS);
                 sprintf(hb_msg, "uptime %s\nversion %d\nbrightness %d", uptime_str, VERSION, ambient_light);
                 send_telemetry("heartbeat", hb_msg);
             }
 
-            ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+            ESP_LOGV(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
 
         } else {
             /* We are not connected to the mqtt broker */

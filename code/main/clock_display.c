@@ -187,7 +187,7 @@ void blink_task(void *pvParameter)
     gpio_set_direction(BLINK_GPIO_1, GPIO_MODE_OUTPUT);
     gpio_set_direction(BLINK_GPIO_2, GPIO_MODE_OUTPUT);
     while(1) {
-        ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+//        ESP_LOGV(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
         /* Blink off (output low) */
         gpio_set_level(BLINK_GPIO_1, 0);
         gpio_set_level(BLINK_GPIO_2, 1);
@@ -502,7 +502,7 @@ void clock_display_task(void *pvParameter)
     /* The main forever loop */
     for(;;) {
         /* Report the stack high water mark */
-        ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+        ESP_LOGV(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
         if ((request_color.r | request_color.g | request_color.b) == 0) 
             color = color_random();
         if (request_display_mode == 0 && (uint8_t)esp_random() < 4) {

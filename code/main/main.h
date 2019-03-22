@@ -48,6 +48,4 @@ extern int request_display_mode;
 extern uint32_t IRAM_ATTR millis();
 extern void delay(uint32_t ms);
 
-#define clock_ms() (1000 * clock() /CLOCKS_PER_SEC) 
-
 #endif

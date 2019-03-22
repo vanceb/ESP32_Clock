@@ -13,7 +13,7 @@
 #define RX_TELEMETRY_MAX_MESSAGE_LEN 256
 
 /* How long between heartbeat mqtt messages */
-#define HEARTBEAT_PERIOD_MS 30000
+#define HEARTBEAT_PERIOD 30
 
 /* Event Group for mqtt status */
 extern EventGroupHandle_t mqtt_event_group;
