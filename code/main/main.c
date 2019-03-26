@@ -180,11 +180,6 @@ void app_main()
     /* disable the default wifi logging */
 	esp_log_level_set("wifi", ESP_LOG_NONE);
 
-    /* Start the gesture and light sensor task */
-    xTaskCreate(&gestureTask, "gesture", 4096, NULL, 5, NULL);
-
-    vTaskDelay(100);
-
 	/* start the HTTP Server task */
 	xTaskCreate(&http_svr, "http_server", 2048, NULL, 5, &task_http_server);
 
@@ -193,6 +188,9 @@ void app_main()
 
     /* Telemetry task for MQTT communication */
     xTaskCreatePinnedToCore(&telemetry_task, "telemetry_task", 9216, NULL, 5, NULL, 1);
+
+    /* Start the gesture and light sensor task */
+    xTaskCreate(&gestureTask, "gesture", 4096, NULL, 5, NULL);
 
     /* Initialise the LED Strands */
     ledStrandSetup();

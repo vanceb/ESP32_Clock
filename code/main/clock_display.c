@@ -210,16 +210,16 @@ rgb statusColor()
 
         if ( uxBits & MQTT_CONNECTED_BIT ) {
             /* MQTT is connected */
-            return log_color( 2, 2, 2 );
+            return log_color( 4, 4, 4 );
 
         } else {
             /* MQTT is not connected */
-            return log_color( 2, 0, 2 );
+            return log_color( 4, 0, 4 );
 
         }
     } else {
         /* Wifi is not connected */
-        return log_color( 2, 0, 0 );
+        return log_color( 4, 0, 0 );
 
     }
 }
